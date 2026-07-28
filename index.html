@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="robots" content="noindex,nofollow" />
+<meta name="theme-color" content="#fbe9ef" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Bloom" />
+<title>Bloom · To-Do</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>" />
+<style>
+:root{
+  --bg1:#fbe9ef; --bg2:#efe6fb; --bg3:#e6f0fb;
+  --blob1:#f6bcd0; --blob2:#c4b5f7;
+  --card:rgba(255,255,255,.55);
+  --card-solid:#fff;
+  --ink:#4a3d52;
+  --soft:#8a7d91;
+  --faint:#c3b6cb;
+  --accent:#e58ba9;
+  --accent-2:#b48be5;
+  --accent-soft:#f7d9e3;
+  --line:rgba(180,139,229,.18);
+  --shadow:0 16px 44px -18px rgba(150,110,180,.5);
+  --done:#b7a9c9;
+}
+*{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+html{height:100%;}
+body{
+  min-height:100%;
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Nunito,sans-serif;
+  background:linear-gradient(135deg,var(--bg1),var(--bg2) 45%,var(--bg3));
+  background-size:200% 200%;
+  animation:drift 24s ease infinite;
+  display:flex; justify-content:center;
+  overscroll-behavior-y:none;
+  transition:background .8s ease;
+}
+@keyframes drift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+/* weiche Pastell-Blobs im Hintergrund */
+body::before,body::after{
+  content:""; position:fixed; border-radius:50%; filter:blur(60px); opacity:.5; pointer-events:none; z-index:0;
+}
+body::before{width:320px;height:320px;background:var(--blob1);top:-100px;left:-90px;animation:float1 18s ease-in-out infinite;}
+body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right:-80px;animation:float2 22s ease-in-out infinite;}
+@keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,30px)}}
+@keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(-20px,-30px)}}
+
+#app{
+  position:relative; z-index:1; width:100%; max-width:430px;
+  padding:max(20px, env(safe-area-inset-top)) 18px calc(110px + env(safe-area-inset-bottom));
+  display:flex; flex-direction:column; gap:18px;
+}
+
+/* ---------- Header ---------- */
+.header{display:flex; align-items:flex-start; justify-content:space-between; padding:8px 4px 0;}
+.header .hello{font-size:.9rem; color:var(--soft); font-weight:600; letter-spacing:.3px;}
+.header .date{font-size:1.65rem; font-weight:800; letter-spacing:-.4px; margin-top:2px;}
+.header .date b{background:linear-gradient(120deg,var(--accent),var(--accent-2)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+.header .quote{font-size:.82rem; color:var(--soft); margin-top:5px;}
+.menu-btn{
+  width:42px;height:42px;border-radius:14px;border:1px solid rgba(255,255,255,.6);
+  background:var(--card);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  color:var(--ink);font-size:1.25rem;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;
+  box-shadow:0 8px 22px -12px rgba(150,110,180,.5);
+}
+.menu-btn:active{transform:scale(.92);}
+
+/* ---------- Progress-Karte ---------- */
+.progress-card{
+  background:var(--card);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border:1px solid rgba(255,255,255,.6); border-radius:24px; padding:20px;
+  display:flex; align-items:center; gap:18px; box-shadow:var(--shadow);
+}
+.ring{position:relative;width:80px;height:80px;flex:none;}
+.ring svg{transform:rotate(-90deg);display:block;}
+.ring .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;}
+.progress-card .big{font-size:1.08rem;font-weight:800;}
+.progress-card .small{font-size:.84rem;color:var(--soft);margin-top:3px;}
+.streak{
+  display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:.78rem;font-weight:700;
+  color:var(--accent-2);background:rgba(180,139,229,.12);
+  padding:4px 11px;border-radius:20px;
+}
+
+/* ---------- Tabs ---------- */
+.tabs{display:flex;gap:8px;}
+.tab{
+  flex:1;border:none;background:rgba(255,255,255,.45);color:var(--soft);
+  font-family:inherit;font-size:.85rem;font-weight:700;padding:10px 0;border-radius:15px;cursor:pointer;transition:.2s;
+}
+.tab.active{
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
+  box-shadow:0 8px 18px -8px rgba(180,110,160,.8);
+}
+
+/* ---------- Liste ---------- */
+#list{display:flex;flex-direction:column;gap:11px;}
+.task{
+  display:flex;align-items:center;gap:13px;
+  background:var(--card-solid);border:1px solid var(--line);border-radius:19px;padding:15px 14px 15px 16px;
+  box-shadow:0 10px 30px -18px rgba(150,110,180,.55);
+  animation:pop .3s cubic-bezier(.2,1.2,.4,1);
+}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+.task.removing{opacity:0;transform:translateX(50px) scale(.92);transition:.25s;}
+.task .check{
+  width:29px;height:29px;border-radius:50%;flex:none;cursor:pointer;
+  border:2.5px solid var(--accent-soft);display:flex;align-items:center;justify-content:center;background:transparent;padding:0;transition:.25s;
+}
+.task .check svg{width:15px;height:15px;stroke:#fff;stroke-width:3.5;fill:none;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:24;stroke-dashoffset:24;transition:stroke-dashoffset .3s ease .05s;}
+.task.done .check{background:linear-gradient(135deg,var(--accent),var(--accent-2));border-color:transparent;}
+.task.done .check svg{stroke-dashoffset:0;}
+.task .body{flex:1;min-width:0;}
+.task .label{font-size:.96rem;font-weight:600;line-height:1.35;word-break:break-word;}
+.task.done .label{color:var(--done);text-decoration:line-through;text-decoration-color:rgba(183,169,201,.6);}
+.task .prio{
+  display:inline-flex;align-items:center;gap:4px;font-size:.68rem;font-weight:700;color:var(--accent);
+  background:rgba(229,139,169,.1);padding:2px 8px;border-radius:10px;margin-top:5px;
+}
+.task .del{
+  border:none;background:transparent;color:#d9cbe1;font-size:1.05rem;cursor:pointer;padding:6px;border-radius:10px;flex:none;
+}
+.task .del:active{color:var(--accent);}
+.empty{text-align:center;color:var(--soft);padding:44px 20px;font-size:.92rem;}
+.empty .em{font-size:2.5rem;display:block;margin-bottom:10px;}
+
+.footer-row{display:flex;justify-content:space-between;align-items:center;padding:0 4px;font-size:.8rem;color:var(--soft);}
+.footer-row button{border:none;background:none;color:var(--soft);font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer;padding:6px;}
+.footer-row button:active{color:var(--accent);}
+
+/* ---------- FAB ---------- */
+.fab{
+  position:fixed;z-index:10;bottom:calc(24px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);
+  width:62px;height:62px;border-radius:50%;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;font-size:2rem;line-height:1;
+  box-shadow:0 12px 30px -6px rgba(180,110,160,.7);
+  display:flex;align-items:center;justify-content:center;
+}
+.fab:active{transform:translateX(-50%) scale(.9);}
+
+/* ---------- Modal / Bottom Sheet ---------- */
+.overlay{
+  position:fixed;inset:0;background:rgba(90,70,110,.28);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  z-index:20;opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.overlay.open{opacity:1;pointer-events:auto;}
+.sheet{
+  position:fixed;z-index:21;left:50%;bottom:0;transform:translate(-50%,105%);
+  width:100%;max-width:430px;background:var(--card-solid);border-radius:26px 26px 0 0;
+  box-shadow:0 -10px 50px -20px rgba(150,110,180,.6);
+  padding:14px 20px calc(26px + env(safe-area-inset-bottom));
+  transition:transform .32s cubic-bezier(.3,1.1,.35,1);
+}
+.sheet.open{transform:translate(-50%,0);}
+.sheet .grab{width:42px;height:4px;border-radius:4px;background:var(--faint);opacity:.5;margin:0 auto 16px;}
+.sheet h2{font-size:1.08rem;font-weight:800;margin-bottom:14px;}
+.sheet input[type=text]{
+  width:100%;background:#faf7fb;border:1px solid var(--line);border-radius:15px;
+  color:var(--ink);font-family:inherit;font-size:1rem;padding:14px 16px;outline:none;
+}
+.sheet input[type=text]::placeholder{color:var(--faint);}
+.sheet input[type=text]:focus{border-color:rgba(229,139,169,.5);}
+.chips{display:flex;gap:8px;margin:14px 0 18px;}
+.chip{
+  flex:1;border:1px solid var(--line);background:#faf7fb;color:var(--soft);
+  font-family:inherit;font-size:.85rem;font-weight:700;padding:11px 0;border-radius:14px;cursor:pointer;
+}
+.chip.active{background:rgba(229,139,169,.12);border-color:rgba(229,139,169,.5);color:var(--accent);}
+.btn-primary{
+  width:100%;border:none;cursor:pointer;border-radius:17px;padding:15px 0;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
+  font-family:inherit;font-size:1rem;font-weight:800;
+  box-shadow:0 10px 24px -8px rgba(180,110,160,.7);
+}
+.btn-primary:active{transform:scale(.98);}
+
+/* Menü-Sheet */
+.menu-item{
+  display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  border:none;background:none;color:var(--ink);font-family:inherit;font-size:.95rem;font-weight:600;
+  padding:14px 4px;cursor:pointer;border-bottom:1px solid var(--line);
+}
+.menu-item:last-of-type{border-bottom:none;}
+.menu-item .ico{width:26px;text-align:center;}
+.menu-item .hint{margin-left:auto;font-size:.78rem;color:var(--faint);font-weight:600;}
+
+/* ---------- Konfetti & Toast ---------- */
+.confetti{position:fixed;z-index:50;pointer-events:none;width:11px;height:11px;border-radius:3px;}
+.toast{
+  position:fixed;z-index:60;bottom:calc(100px + env(safe-area-inset-bottom));left:50%;
+  transform:translateX(-50%) translateY(16px);
+  background:var(--card-solid);color:var(--ink);box-shadow:var(--shadow);border:1px solid var(--line);
+  font-size:.87rem;font-weight:700;padding:13px 21px;border-radius:16px;
+  opacity:0;transition:.35s cubic-bezier(.2,1.2,.4,1);white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ---------- Farbwelten ---------- */
+body.theme-lavender{--bg1:#efe6fb;--bg2:#e9e6fb;--bg3:#f3e6fb;--blob1:#d4c4f5;--blob2:#f0c0e2;--accent:#a78be5;--accent-2:#e58bc9;--accent-soft:#e6d9f7;}
+body.theme-peach{--bg1:#fdeae0;--bg2:#fbe6ec;--bg3:#fdf0e6;--blob1:#f8ceb4;--blob2:#f6bcd0;--accent:#f0a07a;--accent-2:#e58ba9;--accent-soft:#fadfce;}
+body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob2:#bcdcf0;--accent:#6ec9a8;--accent-2:#8bc9e5;--accent-soft:#cdeee0;}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="header">
+    <div>
+      <div class="hello" id="hello"></div>
+      <div class="date" id="date"></div>
+      <div class="quote" id="quote"></div>
+    </div>
+    <button class="menu-btn" onclick="App.openMenu()" aria-label="Menü">⋯</button>
+  </div>
+
+  <div class="progress-card">
+    <div class="ring">
+      <svg width="80" height="80">
+        <circle cx="40" cy="40" r="34" stroke="rgba(180,139,229,.15)" stroke-width="7" fill="none"/>
+        <circle id="ringFill" cx="40" cy="40" r="34" stroke="url(#grad)" stroke-width="7" fill="none"
+          stroke-linecap="round" stroke-dasharray="214" stroke-dashoffset="214"
+          style="transition:stroke-dashoffset .5s cubic-bezier(.4,1.2,.4,1)"/>
+        <defs><linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#e58ba9"/><stop offset="1" stop-color="#b48be5"/>
+        </linearGradient></defs>
+      </svg>
+      <span class="pct" id="pct">0%</span>
+    </div>
+    <div>
+      <div class="big" id="pBig"></div>
+      <div class="small" id="pSmall"></div>
+      <span class="streak">🔥 <span id="streakNum">0</span> Tage Streak</span>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+  <div id="list"></div>
+
+  <div class="footer-row">
+    <span id="count"></span>
+    <button onclick="App.clearDone()">Erledigte löschen</button>
+  </div>
+</div>
+
+<button class="fab" onclick="App.openAdd()" aria-label="Neues To-Do">+</button>
+
+<!-- Overlay + Sheets -->
+<div class="overlay" id="overlay" onclick="App.closeSheets()"></div>
+
+<div class="sheet" id="addSheet">
+  <div class="grab"></div>
+  <h2>Neues To-Do 🌸</h2>
+  <input type="text" id="taskInput" placeholder="Was steht heute an, Süße?" maxlength="140" autocomplete="off"
+         onkeydown="if(event.key==='Enter')App.saveTask()" />
+  <div class="chips">
+    <button class="chip active" id="chipNormal" onclick="App.setPrio(0)">Normal</button>
+    <button class="chip" id="chipWichtig" onclick="App.setPrio(1)">💗 Wichtig</button>
+  </div>
+  <button class="btn-primary" onclick="App.saveTask()">Hinzufügen</button>
+</div>
+
+<div class="sheet" id="menuSheet">
+  <div class="grab"></div>
+  <h2>Menü</h2>
+  <button class="menu-item" onclick="App.cycleTheme()">
+    <span class="ico">🎨</span> Farbwelt <span class="hint" id="themeHint">Rosé</span>
+  </button>
+  <button class="menu-item" onclick="App.toggleSound()">
+    <span class="ico" id="soundIco">🔊</span> Sounds <span class="hint" id="soundHint">an</span>
+  </button>
+  <button class="menu-item" onclick="App.exportData()">
+    <span class="ico">📤</span> Backup exportieren <span class="hint">JSON</span>
+  </button>
+  <button class="menu-item" onclick="document.getElementById('importFile').click()">
+    <span class="ico">📥</span> Backup importieren
+  </button>
+  <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ================= Sound (Web Audio, keine externen Dateien) ================= */
+const Sound = (() => {
+  let ctx = null;
+  function ensure(){
+    if(!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if(ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function tone(freq, start, dur, type, gain){
+    const c = ensure(), o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, c.currentTime + start);
+    g.gain.setValueAtTime(0, c.currentTime + start);
+    g.gain.linearRampToValueAtTime(gain || .16, c.currentTime + start + .015);
+    g.gain.exponentialRampToValueAtTime(.0001, c.currentTime + start + dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(c.currentTime + start); o.stop(c.currentTime + start + dur + .02);
+  }
+  return {
+    complete(){ if(!App.state.meta.sound) return;
+      tone(660,0,.18,'sine',.14); tone(880,.06,.22,'sine',.16); tone(1174,.13,.4,'sine',.14); tone(1760,.2,.5,'triangle',.05); },
+    uncomplete(){ if(!App.state.meta.sound) return; tone(500,0,.12,'sine',.1); tone(360,.05,.16,'sine',.08); },
+    add(){ if(!App.state.meta.sound) return; tone(720,0,.09,'triangle',.09); tone(960,.04,.12,'sine',.07); },
+    del(){ if(!App.state.meta.sound) return; tone(300,0,.14,'sine',.09); tone(200,.06,.18,'sine',.07); },
+    allDone(){ if(!App.state.meta.sound) return;
+      [523,659,784,1046,1318].forEach((f,i)=>tone(f,i*.09,.35,'sine',.13)); tone(1568,.5,.6,'triangle',.06); }
+  };
+})();
+
+/* ================= App (State + render) ================= */
+const KEY = 'bloom_v1';
+const THEMES = [ ['','Rosé'], ['theme-lavender','Lavendel'], ['theme-peach','Peach'], ['theme-mint','Mint'] ];
+
+const App = {
+  state: {
+    todos: [],                     // {id, text, prio, done, created}
+    meta: { streak:0, lastDone:'', sound:true, theme:0 },
+    filter: 'all',
+    newPrio: 0
+  },
+
+  /* ---------- Persistenz ---------- */
+  load(){
+    try{
+      const raw = JSON.parse(localStorage.getItem(KEY) || '{}');
+      if(Array.isArray(raw.todos)) this.state.todos = raw.todos;
+      if(raw.meta) this.state.meta = Object.assign(this.state.meta, raw.meta);
+    }catch(e){ /* korrupte Daten ignorieren, frisch starten */ }
+  },
+  save(){
+    localStorage.setItem(KEY, JSON.stringify({ todos:this.state.todos, meta:this.state.meta }));
+  },
+
+  /* ---------- Aktionen ---------- */
+  openAdd(){
+    this.state.newPrio = 0;
+    document.getElementById('chipNormal').classList.add('active');
+    document.getElementById('chipWichtig').classList.remove('active');
+    document.getElementById('taskInput').value = '';
+    this.openSheet('addSheet');
+    setTimeout(()=>document.getElementById('taskInput').focus(), 350);
+  },
+  setPrio(p){
+    this.state.newPrio = p;
+    document.getElementById('chipNormal').classList.toggle('active', p===0);
+    document.getElementById('chipWichtig').classList.toggle('active', p===1);
+  },
+  saveTask(){
+    const input = document.getElementById('taskInput');
+    const text = input.value.trim();
+    if(!text) return;
+    this.state.todos.unshift({
+      id: String(Date.now()) + Math.floor(Math.random()*1000),
+      text, prio: this.state.newPrio, done:false, created: Date.now()
+    });
+    this.save(); Sound.add();
+    this.closeSheets(); this.render();
+  },
+  toggle(id){
+    const t = this.state.todos.find(x=>x.id===id);
+    if(!t) return;
+    t.done = !t.done;
+    if(t.done){
+      Sound.complete();
+      const el = document.querySelector('[data-id="'+id+'"]');
+      if(el) burst(el);
+      this.updateStreak();
+      if(this.state.todos.length && this.state.todos.every(x=>x.done)){
+        setTimeout(()=>{ Sound.allDone(); rain(); toast('Alles erledigt, du Queen 👑'); }, 350);
+      }
+    } else {
+      Sound.uncomplete();
+    }
+    this.save(); this.render();
+  },
+  remove(id){
+    Sound.del();
+    const el = document.querySelector('[data-id="'+id+'"]');
+    if(el) el.classList.add('removing');
+    setTimeout(()=>{
+      this.state.todos = this.state.todos.filter(x=>x.id!==id);
+      this.save(); this.render();
+    }, 240);
+  },
+  clearDone(){
+    if(!this.state.todos.some(t=>t.done)) return;
+    Sound.del();
+    this.state.todos = this.state.todos.filter(t=>!t.done);
+    this.save(); this.render(); toast('Aufgeräumt 🧹');
+  },
+  setFilter(f){ this.state.filter = f; this.render(); },
+
+  /* ---------- Streak ---------- */
+  dayStr(d){ return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); },
+  updateStreak(){
+    const today = this.dayStr(new Date());
+    if(this.state.meta.lastDone === today) return;
+    const y = new Date(); y.setDate(y.getDate()-1);
+    this.state.meta.streak = (this.state.meta.lastDone === this.dayStr(y)) ? (this.state.meta.streak||0)+1 : 1;
+    this.state.meta.lastDone = today;
+    this.save();
+  },
+
+  /* ---------- Sheets ---------- */
+  openSheet(id){
+    document.getElementById('overlay').classList.add('open');
+    document.getElementById(id).classList.add('open');
+  },
+  closeSheets(){
+    document.getElementById('overlay').classList.remove('open');
+    document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'));
+  },
+  openMenu(){ this.openSheet('menuSheet'); },
+
+  /* ---------- Menü ---------- */
+  cycleTheme(){
+    this.state.meta.theme = (this.state.meta.theme + 1) % THEMES.length;
+    this.save(); this.applyTheme(); Sound.add();
+  },
+  applyTheme(){
+    // nur eigene Theme-Klassen anfassen, sonst nichts am <body> ändern
+    THEMES.forEach(([cls]) => { if(cls) document.body.classList.remove(cls); });
+    const [cls, name] = THEMES[this.state.meta.theme] || THEMES[0];
+    if(cls) document.body.classList.add(cls);
+    document.getElementById('themeHint').textContent = name;
+  },
+  toggleSound(){
+    this.state.meta.sound = !this.state.meta.sound;
+    this.save(); this.renderSoundUI();
+    if(this.state.meta.sound) Sound.add();
+  },
+  renderSoundUI(){
+    const on = this.state.meta.sound;
+    document.getElementById('soundIco').textContent = on ? '🔊' : '🔇';
+    document.getElementById('soundHint').textContent = on ? 'an' : 'aus';
+  },
+  exportData(){
+    const blob = new Blob([JSON.stringify({ todos:this.state.todos, meta:this.state.meta }, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'bloom-backup.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('Backup exportiert 📤');
+  },
+  importData(ev){
+    const file = ev.target.files && ev.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const data = JSON.parse(reader.result);
+        if(!Array.isArray(data.todos)) throw new Error('bad');
+        this.state.todos = data.todos;
+        if(data.meta) this.state.meta = Object.assign(this.state.meta, data.meta);
+        this.save(); this.closeSheets(); this.applyTheme(); this.render();
+        toast('Backup importiert 📥');
+      }catch(e){ toast('Datei konnte nicht gelesen werden 😕'); }
+      ev.target.value = '';
+    };
+    reader.readAsText(file);
+  },
+
+  /* ---------- Render ---------- */
+  render(){
+    const s = this.state;
+
+    // Tabs
+    const tabs = [ ['all','Alle'], ['active','Offen'], ['done','Erledigt'] ];
+    document.getElementById('tabs').innerHTML = tabs.map(([f,label]) =>
+      '<button class="tab'+(s.filter===f?' active':'')+'" onclick="App.setFilter(\''+f+'\')">'+label+'</button>'
+    ).join('');
+
+    // Liste (Offene zuerst Wichtig, dann neueste)
+    const filtered = s.todos
+      .filter(t => s.filter==='all' ? true : s.filter==='active' ? !t.done : t.done)
+      .slice()
+      .sort((a,b) => (a.done - b.done) || (b.prio - a.prio) || (b.created - a.created));
+
+    if(filtered.length === 0){
+      const msg = s.filter==='done' ? 'Noch nichts erledigt – gleich geht\'s los!'
+                : s.filter==='active' ? 'Alles erledigt, du Queen 👑'
+                : 'Noch nichts geplant.<br>Tipp unten auf +';
+      document.getElementById('list').innerHTML =
+        '<div class="empty"><span class="em">'+(s.filter==='active'?'🎉':'🌿')+'</span>'+msg+'</div>';
+    } else {
+      document.getElementById('list').innerHTML = filtered.map(t =>
+        '<div class="task'+(t.done?' done':'')+'" data-id="'+t.id+'">'+
+          '<button class="check" onclick="App.toggle(\''+t.id+'\')" aria-label="Abhaken">'+
+            '<svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6"/></svg>'+
+          '</button>'+
+          '<div class="body">'+
+            '<div class="label">'+esc(t.text)+'</div>'+
+            (t.prio===1 && !t.done ? '<span class="prio">💗 Wichtig</span>' : '')+
+          '</div>'+
+          '<button class="del" onclick="App.remove(\''+t.id+'\')" aria-label="Löschen">✕</button>'+
+        '</div>'
+      ).join('');
+    }
+
+    // Fortschritt
+    const total = s.todos.length, done = s.todos.filter(t=>t.done).length;
+    const pct = total ? Math.round(done/total*100) : 0;
+    document.getElementById('pct').textContent = pct+'%';
+    document.getElementById('ringFill').style.strokeDashoffset = 214 - 214*pct/100;
+    const big = document.getElementById('pBig'), small = document.getElementById('pSmall');
+    if(total === 0){ big.textContent = "Los geht's 💫"; small.textContent = 'Noch nichts geplant'; }
+    else if(done === total){ big.textContent = 'Alles erledigt! 🎉'; small.textContent = 'Du bist unglaublich 💗'; }
+    else { big.textContent = done+' von '+total+' geschafft'; small.textContent = (total-done)+' noch offen 🌸'; }
+    document.getElementById('streakNum').textContent = s.meta.streak || 0;
+    document.getElementById('count').textContent = s.todos.filter(t=>!t.done).length + ' offen';
+
+    this.renderSoundUI();
+  },
+
+  renderHeader(){
+    const d = new Date();
+    const days = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+    const months = ['Jan','Feb','März','Apr','Mai','Juni','Juli','Aug','Sept','Okt','Nov','Dez'];
+    const quotes = [
+      'Ein kleiner Schritt nach dem anderen 🌷','Du schaffst das, wie immer 💪',
+      'Selfcare zählt auch als To-Do 🛁','Heute wird dein Tag ☀️',
+      'Kleine Erfolge, große Freude ✨','Sei stolz auf dich 💗','Progress over perfection 🌸'
+    ];
+    const h = d.getHours();
+    document.getElementById('hello').textContent =
+      h<11 ? 'Guten Morgen ☀️' : h<17 ? 'Hey Beautiful ✨' : h<22 ? 'Guten Abend 🌙' : 'Schlaf gut 🌛';
+    document.getElementById('date').innerHTML =
+      days[d.getDay()]+', <b>'+d.getDate()+'. '+months[d.getMonth()]+'</b>';
+    document.getElementById('quote').textContent = quotes[d.getDate() % quotes.length];
+  },
+
+  init(){
+    this.load();
+    this.applyTheme();
+    this.renderHeader();
+    this.render();
+  }
+};
+
+/* ================= Helfer ================= */
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+let toastTimer;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 2500);
+}
+
+/* Konfetti-Burst an einem Element */
+function burst(el){
+  const r = el.getBoundingClientRect();
+  const x = r.left + 34, y = r.top + r.height/2;
+  const colors = ['#e58ba9','#b48be5','#f6bcd0','#8bc9e5','#ffd6a5','#c4b5f7'];
+  for(let i=0;i<14;i++){
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.background = colors[i % colors.length];
+    c.style.left = x+'px'; c.style.top = y+'px';
+    if(i % 3 === 0) c.style.borderRadius = '50%';
+    document.body.appendChild(c);
+    const ang = Math.random()*Math.PI*2, dist = 40 + Math.random()*70;
+    c.animate([
+      {transform:'translate(0,0) rotate(0) scale(1)', opacity:1},
+      {transform:'translate('+(Math.cos(ang)*dist)+'px,'+(Math.sin(ang)*dist-30)+'px) rotate('+(Math.random()*540)+'deg) scale(.3)', opacity:0}
+    ],{duration:700+Math.random()*400, easing:'cubic-bezier(.2,.8,.3,1)'}).onfinish = ()=>c.remove();
+  }
+}
+
+/* Konfetti-Regen, wenn alles fertig ist */
+function rain(){
+  const colors = ['#e58ba9','#b48be5','#f6bcd0','#8bc9e5','#ffd6a5','#c4b5f7','#a0e5c9'];
+  for(let i=0;i<60;i++){
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.background = colors[i % colors.length];
+    c.style.left = Math.random()*window.innerWidth+'px';
+    c.style.top = '-20px';
+    if(i % 2 === 0) c.style.borderRadius = '50%';
+    document.body.appendChild(c);
+    c.animate([
+      {transform:'translate(0,0) rotate(0)', opacity:1},
+      {transform:'translate('+((Math.random()-.5)*200)+'px,'+(window.innerHeight+40)+'px) rotate('+(Math.random()*720)+'deg)', opacity:1, offset:.9},
+      {opacity:0}
+    ],{duration:2200+Math.random()*1200, easing:'cubic-bezier(.3,.6,.5,1)'}).onfinish = ()=>c.remove();
+  }
+}
+
+App.init();
+</script>
+</body>
+</html>
