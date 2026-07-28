@@ -53,7 +53,7 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 #app{
   position:relative; z-index:1; width:100%; max-width:430px;
   padding:max(20px, env(safe-area-inset-top)) 18px calc(110px + env(safe-area-inset-bottom));
-  display:flex; flex-direction:column; gap:18px;
+  display:flex; flex-direction:column; gap:16px;
 }
 
 /* ---------- Header ---------- */
@@ -69,6 +69,19 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
   box-shadow:0 8px 22px -12px rgba(150,110,180,.5);
 }
 .menu-btn:active{transform:scale(.92);}
+
+/* ---------- Ansicht-Umschalter ---------- */
+.segmented{
+  display:flex;gap:6px;background:rgba(255,255,255,.45);border-radius:17px;padding:5px;
+}
+.seg{
+  flex:1;border:none;background:transparent;color:var(--soft);
+  font-family:inherit;font-size:.88rem;font-weight:700;padding:10px 0;border-radius:13px;cursor:pointer;transition:.2s;
+}
+.seg.active{
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
+  box-shadow:0 8px 18px -8px rgba(180,110,160,.8);
+}
 
 /* ---------- Progress-Karte ---------- */
 .progress-card{
@@ -98,10 +111,37 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
   box-shadow:0 8px 18px -8px rgba(180,110,160,.8);
 }
 
+/* ---------- Kalender ---------- */
+.cal-head{display:flex;align-items:center;justify-content:space-between;padding:0 2px;}
+.cal-head .label{font-size:1rem;font-weight:800;}
+.cal-nav{
+  width:38px;height:38px;border-radius:13px;border:1px solid rgba(255,255,255,.6);
+  background:var(--card);color:var(--ink);font-size:1.05rem;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.cal-nav:active{transform:scale(.9);}
+.week{display:flex;gap:5px;}
+.day{
+  flex:1;border:none;background:rgba(255,255,255,.45);border-radius:14px;padding:9px 0 7px;
+  display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;font-family:inherit;color:var(--ink);
+}
+.day .wd{font-size:.62rem;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.4px;}
+.day .num{font-size:.95rem;font-weight:800;}
+.day .dot{width:5px;height:5px;border-radius:50%;background:transparent;}
+.day.has .dot{background:var(--accent);}
+.day.today .num{color:var(--accent);}
+.day.sel{
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  box-shadow:0 8px 18px -8px rgba(180,110,160,.8);
+}
+.day.sel .wd,.day.sel .num{color:#fff;}
+.day.sel .dot{background:rgba(255,255,255,.85);}
+.day-title{font-size:.85rem;font-weight:700;color:var(--soft);padding:2px 4px 0;}
+
 /* ---------- Liste ---------- */
-#list{display:flex;flex-direction:column;gap:11px;}
+.list{display:flex;flex-direction:column;gap:11px;}
 .task{
-  display:flex;align-items:center;gap:13px;
+  display:flex;align-items:flex-start;gap:13px;
   background:var(--card-solid);border:1px solid var(--line);border-radius:19px;padding:15px 14px 15px 16px;
   box-shadow:0 10px 30px -18px rgba(150,110,180,.55);
   animation:pop .3s cubic-bezier(.2,1.2,.4,1);
@@ -109,20 +149,25 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 @keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
 .task.removing{opacity:0;transform:translateX(50px) scale(.92);transition:.25s;}
 .task .check{
-  width:29px;height:29px;border-radius:50%;flex:none;cursor:pointer;
+  width:29px;height:29px;border-radius:50%;flex:none;cursor:pointer;margin-top:1px;
   border:2.5px solid var(--accent-soft);display:flex;align-items:center;justify-content:center;background:transparent;padding:0;transition:.25s;
 }
 .task .check svg{width:15px;height:15px;stroke:#fff;stroke-width:3.5;fill:none;stroke-linecap:round;stroke-linejoin:round;
   stroke-dasharray:24;stroke-dashoffset:24;transition:stroke-dashoffset .3s ease .05s;}
 .task.done .check{background:linear-gradient(135deg,var(--accent),var(--accent-2));border-color:transparent;}
 .task.done .check svg{stroke-dashoffset:0;}
-.task .body{flex:1;min-width:0;}
+.task .body{flex:1;min-width:0;cursor:pointer;}
 .task .label{font-size:.96rem;font-weight:600;line-height:1.35;word-break:break-word;}
 .task.done .label{color:var(--done);text-decoration:line-through;text-decoration-color:rgba(183,169,201,.6);}
-.task .prio{
-  display:inline-flex;align-items:center;gap:4px;font-size:.68rem;font-weight:700;color:var(--accent);
-  background:rgba(229,139,169,.1);padding:2px 8px;border-radius:10px;margin-top:5px;
+.task .note{font-size:.79rem;color:var(--soft);line-height:1.35;margin-top:3px;word-break:break-word;}
+.task.done .note{color:var(--faint);}
+.task .chips-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+.task .mchip{
+  display:inline-flex;align-items:center;gap:4px;font-size:.68rem;font-weight:700;
+  padding:2px 8px;border-radius:10px;
 }
+.task .mchip.prio{color:var(--accent);background:rgba(229,139,169,.1);}
+.task .mchip.when{color:var(--accent-2);background:rgba(180,139,229,.12);}
 .task .del{
   border:none;background:transparent;color:#d9cbe1;font-size:1.05rem;cursor:pointer;padding:6px;border-radius:10px;flex:none;
 }
@@ -156,16 +201,21 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
   box-shadow:0 -10px 50px -20px rgba(150,110,180,.6);
   padding:14px 20px calc(26px + env(safe-area-inset-bottom));
   transition:transform .32s cubic-bezier(.3,1.1,.35,1);
+  max-height:82vh;overflow-y:auto;
 }
 .sheet.open{transform:translate(-50%,0);}
 .sheet .grab{width:42px;height:4px;border-radius:4px;background:var(--faint);opacity:.5;margin:0 auto 16px;}
 .sheet h2{font-size:1.08rem;font-weight:800;margin-bottom:14px;}
-.sheet input[type=text]{
+.sheet input[type=text],.sheet input[type=date],.sheet input[type=time]{
   width:100%;background:#faf7fb;border:1px solid var(--line);border-radius:15px;
-  color:var(--ink);font-family:inherit;font-size:1rem;padding:14px 16px;outline:none;
+  color:var(--ink);font-family:inherit;font-size:1rem;padding:13px 15px;outline:none;
+  -webkit-appearance:none;appearance:none;min-height:48px;
 }
-.sheet input[type=text]::placeholder{color:var(--faint);}
-.sheet input[type=text]:focus{border-color:rgba(229,139,169,.5);}
+.sheet input::placeholder{color:var(--faint);}
+.sheet input:focus{border-color:rgba(229,139,169,.5);}
+.field-label{font-size:.74rem;font-weight:700;color:var(--soft);margin:13px 4px 6px;text-transform:uppercase;letter-spacing:.4px;}
+.field-row{display:flex;gap:8px;}
+.field-row>div{flex:1;min-width:0;}
 .chips{display:flex;gap:8px;margin:14px 0 18px;}
 .chip{
   flex:1;border:1px solid var(--line);background:#faf7fb;color:var(--soft);
@@ -179,6 +229,11 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
   box-shadow:0 10px 24px -8px rgba(180,110,160,.7);
 }
 .btn-primary:active{transform:scale(.98);}
+.btn-ghost{
+  width:100%;border:none;background:none;color:var(--soft);cursor:pointer;
+  font-family:inherit;font-size:.85rem;font-weight:700;padding:13px 0 2px;
+}
+.btn-ghost:active{color:var(--accent);}
 
 /* Menü-Sheet */
 .menu-item{
@@ -221,32 +276,54 @@ body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob
     <button class="menu-btn" onclick="App.openMenu()" aria-label="Menü">⋯</button>
   </div>
 
-  <div class="progress-card">
-    <div class="ring">
-      <svg width="80" height="80">
-        <circle cx="40" cy="40" r="34" stroke="rgba(180,139,229,.15)" stroke-width="7" fill="none"/>
-        <circle id="ringFill" cx="40" cy="40" r="34" stroke="url(#grad)" stroke-width="7" fill="none"
-          stroke-linecap="round" stroke-dasharray="214" stroke-dashoffset="214"
-          style="transition:stroke-dashoffset .5s cubic-bezier(.4,1.2,.4,1)"/>
-        <defs><linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#e58ba9"/><stop offset="1" stop-color="#b48be5"/>
-        </linearGradient></defs>
-      </svg>
-      <span class="pct" id="pct">0%</span>
+  <div class="segmented">
+    <button class="seg active" id="segList" onclick="App.setView('list')">Aufgaben</button>
+    <button class="seg" id="segCal" onclick="App.setView('cal')">Kalender</button>
+  </div>
+
+  <!-- Aufgaben-Ansicht -->
+  <div id="listView" style="display:contents">
+    <div class="progress-card">
+      <div class="ring">
+        <svg width="80" height="80">
+          <circle cx="40" cy="40" r="34" stroke="rgba(180,139,229,.15)" stroke-width="7" fill="none"/>
+          <circle id="ringFill" cx="40" cy="40" r="34" stroke="url(#grad)" stroke-width="7" fill="none"
+            stroke-linecap="round" stroke-dasharray="214" stroke-dashoffset="214"
+            style="transition:stroke-dashoffset .5s cubic-bezier(.4,1.2,.4,1)"/>
+          <defs><linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#e58ba9"/><stop offset="1" stop-color="#b48be5"/>
+          </linearGradient></defs>
+        </svg>
+        <span class="pct" id="pct">0%</span>
+      </div>
+      <div>
+        <div class="big" id="pBig"></div>
+        <div class="small" id="pSmall"></div>
+        <span class="streak">🔥 <span id="streakNum">0</span> Tage Streak</span>
+      </div>
     </div>
-    <div>
-      <div class="big" id="pBig"></div>
-      <div class="small" id="pSmall"></div>
-      <span class="streak">🔥 <span id="streakNum">0</span> Tage Streak</span>
+
+    <div class="tabs" id="tabs"></div>
+    <div class="list" id="list"></div>
+
+    <div class="footer-row">
+      <span id="count"></span>
+      <button onclick="App.clearDone()">Erledigte löschen</button>
     </div>
   </div>
 
-  <div class="tabs" id="tabs"></div>
-  <div id="list"></div>
-
-  <div class="footer-row">
-    <span id="count"></span>
-    <button onclick="App.clearDone()">Erledigte löschen</button>
+  <!-- Kalender-Ansicht -->
+  <div id="calView" style="display:none">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="cal-head">
+        <button class="cal-nav" onclick="App.shiftWeek(-1)" aria-label="Vorige Woche">‹</button>
+        <span class="label" id="calLabel"></span>
+        <button class="cal-nav" onclick="App.shiftWeek(1)" aria-label="Nächste Woche">›</button>
+      </div>
+      <div class="week" id="week"></div>
+      <div class="day-title" id="dayTitle"></div>
+      <div class="list" id="dayList"></div>
+    </div>
   </div>
 </div>
 
@@ -257,14 +334,26 @@ body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob
 
 <div class="sheet" id="addSheet">
   <div class="grab"></div>
-  <h2>Neues To-Do 🌸</h2>
-  <input type="text" id="taskInput" placeholder="Was steht an?" maxlength="140" autocomplete="off"
-         onkeydown="if(event.key==='Enter')App.saveTask()" />
+  <h2 id="sheetTitle">Neues To-Do</h2>
+  <input type="text" id="taskInput" placeholder="Was steht an?" maxlength="140" autocomplete="off" />
+  <div class="field-label">Notiz (optional)</div>
+  <input type="text" id="noteInput" placeholder="z. B. Unterlagen mitnehmen" maxlength="200" autocomplete="off" />
+  <div class="field-row" style="margin-top:13px">
+    <div>
+      <div class="field-label" style="margin-top:0">Datum</div>
+      <input type="date" id="dateInput" />
+    </div>
+    <div>
+      <div class="field-label" style="margin-top:0">Uhrzeit</div>
+      <input type="time" id="timeInput" />
+    </div>
+  </div>
   <div class="chips">
     <button class="chip active" id="chipNormal" onclick="App.setPrio(0)">Normal</button>
     <button class="chip" id="chipWichtig" onclick="App.setPrio(1)">💗 Wichtig</button>
   </div>
-  <button class="btn-primary" onclick="App.saveTask()">Hinzufügen</button>
+  <button class="btn-primary" id="saveBtn" onclick="App.saveTask()">Hinzufügen</button>
+  <button class="btn-ghost" id="sheetDelBtn" style="display:none" onclick="App.removeFromSheet()">Löschen</button>
 </div>
 
 <div class="sheet" id="nameSheet">
@@ -334,12 +423,18 @@ const Sound = (() => {
 /* ================= App (State + render) ================= */
 const KEY = 'bloom_v1';
 const THEMES = [ ['','Rosé'], ['theme-lavender','Lavendel'], ['theme-peach','Peach'], ['theme-mint','Mint'] ];
+const WD = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+const WD_LONG = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+const MONTHS = ['Jan','Feb','März','Apr','Mai','Juni','Juli','Aug','Sept','Okt','Nov','Dez'];
 
 const App = {
   state: {
-    todos: [],                     // {id, text, prio, done, created}
+    todos: [],                     // {id, text, note, prio, done, created, date:'YYYY-MM-DD'|'', time:'HH:MM'|''}
     meta: { streak:0, lastDone:'', sound:true, theme:0, name:'Sophia' },
     filter: 'all',
+    view: 'list',
+    selDate: '',                   // ausgewählter Tag im Kalender
+    editId: null,
     newPrio: 0
   },
 
@@ -355,14 +450,67 @@ const App = {
     localStorage.setItem(KEY, JSON.stringify({ todos:this.state.todos, meta:this.state.meta }));
   },
 
-  /* ---------- Aktionen ---------- */
+  /* ---------- Datum-Helfer ---------- */
+  fmtDate(d){
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  },
+  parseDate(s){
+    const [y,m,d] = s.split('-').map(Number);
+    return new Date(y, m-1, d);
+  },
+  niceDate(s){
+    const d = this.parseDate(s);
+    return d.getDate()+'. '+MONTHS[d.getMonth()];
+  },
+
+  /* ---------- Ansicht ---------- */
+  setView(v){
+    this.state.view = v;
+    document.getElementById('segList').classList.toggle('active', v==='list');
+    document.getElementById('segCal').classList.toggle('active', v==='cal');
+    document.getElementById('listView').style.display = v==='list' ? 'contents' : 'none';
+    document.getElementById('calView').style.display = v==='cal' ? 'block' : 'none';
+    if(v==='cal' && !this.state.selDate) this.state.selDate = this.fmtDate(new Date());
+    this.render();
+  },
+  shiftWeek(dir){
+    const d = this.parseDate(this.state.selDate);
+    d.setDate(d.getDate() + dir*7);
+    this.state.selDate = this.fmtDate(d);
+    this.render();
+  },
+  selectDay(s){
+    this.state.selDate = s;
+    this.render();
+  },
+
+  /* ---------- Sheet: Neu / Bearbeiten ---------- */
   openAdd(){
-    this.state.newPrio = 0;
-    document.getElementById('chipNormal').classList.add('active');
-    document.getElementById('chipWichtig').classList.remove('active');
-    document.getElementById('taskInput').value = '';
+    this.state.editId = null;
+    this.fillSheet({ text:'', note:'', prio:0,
+      date: this.state.view==='cal' ? this.state.selDate : '', time:'' });
+    document.getElementById('sheetTitle').textContent = 'Neues To-Do';
+    document.getElementById('saveBtn').textContent = 'Hinzufügen';
+    document.getElementById('sheetDelBtn').style.display = 'none';
     this.openSheet('addSheet');
     setTimeout(()=>document.getElementById('taskInput').focus(), 350);
+  },
+  openEdit(id){
+    const t = this.state.todos.find(x=>x.id===id);
+    if(!t) return;
+    this.state.editId = id;
+    this.fillSheet({ text:t.text, note:t.note||'', prio:t.prio||0, date:t.date||'', time:t.time||'' });
+    document.getElementById('sheetTitle').textContent = 'To-Do bearbeiten';
+    document.getElementById('saveBtn').textContent = 'Speichern';
+    document.getElementById('sheetDelBtn').style.display = 'block';
+    this.openSheet('addSheet');
+  },
+  fillSheet(v){
+    document.getElementById('taskInput').value = v.text;
+    document.getElementById('noteInput').value = v.note;
+    document.getElementById('dateInput').value = v.date;
+    document.getElementById('timeInput').value = v.time;
+    this.setPrio(v.prio);
   },
   setPrio(p){
     this.state.newPrio = p;
@@ -370,16 +518,33 @@ const App = {
     document.getElementById('chipWichtig').classList.toggle('active', p===1);
   },
   saveTask(){
-    const input = document.getElementById('taskInput');
-    const text = input.value.trim();
+    const text = document.getElementById('taskInput').value.trim();
     if(!text) return;
-    this.state.todos.unshift({
-      id: String(Date.now()) + Math.floor(Math.random()*1000),
-      text, prio: this.state.newPrio, done:false, created: Date.now()
-    });
-    this.save(); Sound.add();
+    const note = document.getElementById('noteInput').value.trim();
+    const date = document.getElementById('dateInput').value || '';
+    const time = document.getElementById('timeInput').value || '';
+    if(this.state.editId){
+      const t = this.state.todos.find(x=>x.id===this.state.editId);
+      if(t){ t.text=text; t.note=note; t.prio=this.state.newPrio; t.date=date; t.time=time; }
+      toast('Gespeichert ✔');
+    } else {
+      this.state.todos.unshift({
+        id: String(Date.now()) + Math.floor(Math.random()*1000),
+        text, note, prio: this.state.newPrio, done:false, created: Date.now(), date, time
+      });
+      Sound.add();
+    }
+    this.save();
     this.closeSheets(); this.render();
   },
+  removeFromSheet(){
+    if(!this.state.editId) return;
+    const id = this.state.editId;
+    this.closeSheets();
+    this.remove(id);
+  },
+
+  /* ---------- Aktionen ---------- */
   toggle(id){
     const t = this.state.todos.find(x=>x.id===id);
     if(!t) return;
@@ -497,21 +662,50 @@ const App = {
     reader.readAsText(file);
   },
 
+  /* ---------- Task-Zeile (für beide Ansichten) ---------- */
+  taskHtml(t, showWhen){
+    const chips = [];
+    if(t.prio===1 && !t.done) chips.push('<span class="mchip prio">💗 Wichtig</span>');
+    if(showWhen && (t.date || t.time)){
+      const parts = [];
+      if(t.date) parts.push(this.niceDate(t.date));
+      if(t.time) parts.push(t.time);
+      chips.push('<span class="mchip when">🕐 '+parts.join(' · ')+'</span>');
+    }
+    if(!showWhen && t.time) chips.push('<span class="mchip when">🕐 '+t.time+'</span>');
+    return '<div class="task'+(t.done?' done':'')+'" data-id="'+t.id+'">'+
+      '<button class="check" onclick="App.toggle(\''+t.id+'\')" aria-label="Abhaken">'+
+        '<svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6"/></svg>'+
+      '</button>'+
+      '<div class="body" onclick="App.openEdit(\''+t.id+'\')">'+
+        '<div class="label">'+esc(t.text)+'</div>'+
+        (t.note ? '<div class="note">'+esc(t.note)+'</div>' : '')+
+        (chips.length ? '<div class="chips-row">'+chips.join('')+'</div>' : '')+
+      '</div>'+
+      '<button class="del" onclick="App.remove(\''+t.id+'\')" aria-label="Löschen">✕</button>'+
+    '</div>';
+  },
+
   /* ---------- Render ---------- */
   render(){
+    if(this.state.view === 'cal') this.renderCal();
+    else this.renderList();
+    this.renderSoundUI();
+    this.renderNameUI();
+  },
+
+  renderList(){
     const s = this.state;
 
-    // Tabs
     const tabs = [ ['all','Alle'], ['active','Offen'], ['done','Erledigt'] ];
     document.getElementById('tabs').innerHTML = tabs.map(([f,label]) =>
       '<button class="tab'+(s.filter===f?' active':'')+'" onclick="App.setFilter(\''+f+'\')">'+label+'</button>'
     ).join('');
 
-    // Liste (Offene zuerst Wichtig, dann neueste)
     const filtered = s.todos
       .filter(t => s.filter==='all' ? true : s.filter==='active' ? !t.done : t.done)
       .slice()
-      .sort((a,b) => (a.done - b.done) || (b.prio - a.prio) || (b.created - a.created));
+      .sort((a,b) => (a.done - b.done) || ((b.prio||0) - (a.prio||0)) || (b.created - a.created));
 
     if(filtered.length === 0){
       const msg = s.filter==='done' ? 'Noch nichts erledigt – fang an.'
@@ -520,21 +714,9 @@ const App = {
       document.getElementById('list').innerHTML =
         '<div class="empty"><span class="em">'+(s.filter==='active'?'🎉':'🌿')+'</span>'+msg+'</div>';
     } else {
-      document.getElementById('list').innerHTML = filtered.map(t =>
-        '<div class="task'+(t.done?' done':'')+'" data-id="'+t.id+'">'+
-          '<button class="check" onclick="App.toggle(\''+t.id+'\')" aria-label="Abhaken">'+
-            '<svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6"/></svg>'+
-          '</button>'+
-          '<div class="body">'+
-            '<div class="label">'+esc(t.text)+'</div>'+
-            (t.prio===1 && !t.done ? '<span class="prio">💗 Wichtig</span>' : '')+
-          '</div>'+
-          '<button class="del" onclick="App.remove(\''+t.id+'\')" aria-label="Löschen">✕</button>'+
-        '</div>'
-      ).join('');
+      document.getElementById('list').innerHTML = filtered.map(t => this.taskHtml(t, true)).join('');
     }
 
-    // Fortschritt
     const total = s.todos.length, done = s.todos.filter(t=>t.done).length;
     const pct = total ? Math.round(done/total*100) : 0;
     document.getElementById('pct').textContent = pct+'%';
@@ -545,15 +727,52 @@ const App = {
     else { big.textContent = done+' von '+total+' geschafft'; small.textContent = (total-done)+' noch offen'; }
     document.getElementById('streakNum').textContent = s.meta.streak || 0;
     document.getElementById('count').textContent = s.todos.filter(t=>!t.done).length + ' offen';
+  },
 
-    this.renderSoundUI();
-    this.renderNameUI();
+  renderCal(){
+    const s = this.state;
+    if(!s.selDate) s.selDate = this.fmtDate(new Date());
+    const sel = this.parseDate(s.selDate);
+    const today = this.fmtDate(new Date());
+
+    // Montag der ausgewählten Woche finden
+    const monday = new Date(sel);
+    monday.setDate(sel.getDate() - ((sel.getDay()+6)%7));
+
+    document.getElementById('calLabel').textContent =
+      monday.getDate()+'. '+MONTHS[monday.getMonth()]+' – ' +
+      (()=>{ const su=new Date(monday); su.setDate(monday.getDate()+6);
+             return su.getDate()+'. '+MONTHS[su.getMonth()]; })();
+
+    let strip = '';
+    for(let i=0;i<7;i++){
+      const d = new Date(monday); d.setDate(monday.getDate()+i);
+      const ds = this.fmtDate(d);
+      const has = s.todos.some(t=>t.date===ds && !t.done);
+      strip += '<button class="day'+(ds===s.selDate?' sel':'')+(ds===today?' today':'')+(has?' has':'')+'" '+
+        'onclick="App.selectDay(\''+ds+'\')">'+
+        '<span class="wd">'+WD[d.getDay()]+'</span>'+
+        '<span class="num">'+d.getDate()+'</span>'+
+        '<span class="dot"></span>'+
+      '</button>';
+    }
+    document.getElementById('week').innerHTML = strip;
+
+    document.getElementById('dayTitle').textContent =
+      WD_LONG[sel.getDay()]+', '+sel.getDate()+'. '+MONTHS[sel.getMonth()] + (s.selDate===today ? ' · Heute' : '');
+
+    const dayTasks = s.todos
+      .filter(t => t.date === s.selDate)
+      .slice()
+      .sort((a,b) => (a.done - b.done) || ((a.time||'99:99') > (b.time||'99:99') ? 1 : -1) || ((b.prio||0)-(a.prio||0)));
+
+    document.getElementById('dayList').innerHTML = dayTasks.length
+      ? dayTasks.map(t => this.taskHtml(t, false)).join('')
+      : '<div class="empty"><span class="em">🗓</span>Nichts geplant an diesem Tag.<br>Tipp unten auf + zum Planen.</div>';
   },
 
   renderHeader(){
     const d = new Date();
-    const days = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
-    const months = ['Jan','Feb','März','Apr','Mai','Juni','Juli','Aug','Sept','Okt','Nov','Dez'];
     const h = d.getHours();
     const name = this.state.meta.name;
     const withName = txt => name ? txt + ', ' + name : txt;
@@ -561,7 +780,7 @@ const App = {
     document.getElementById('hello').textContent =
       h<11 ? withName('Good morning') : h<17 ? withName('Good afternoon') : withName('Good evening');
     document.getElementById('date').innerHTML =
-      days[d.getDay()]+', <b>'+d.getDate()+'. '+months[d.getMonth()]+'</b>';
+      WD_LONG[d.getDay()]+', <b>'+d.getDate()+'. '+MONTHS[d.getMonth()]+'</b>';
 
     // Sprüche je nach Tageszeit – direkt, nicht kitschig
     const morning = [
