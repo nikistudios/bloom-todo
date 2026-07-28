@@ -340,6 +340,30 @@ body.theme-lavender{--bg1:#efe6fb;--bg2:#e9e6fb;--bg3:#f3e6fb;--blob1:#d4c4f5;--
 body.theme-peach{--bg1:#fdeae0;--bg2:#fbe6ec;--bg3:#fdf0e6;--blob1:#f8ceb4;--blob2:#f6bcd0;--accent:#f0a07a;--accent-2:#e58ba9;--accent-soft:#fadfce;}
 body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob2:#bcdcf0;--accent:#6ec9a8;--accent-2:#8bc9e5;--accent-soft:#cdeee0;}
 
+/* ---------- Desktop / Laptop: zwei Spalten ---------- */
+@media (min-width:1000px){
+  #app{
+    max-width:1100px;
+    display:grid;grid-template-columns:440px minmax(0,1fr);gap:28px;align-items:start;
+    padding-bottom:60px;
+  }
+  .header{grid-column:1/-1;}
+  .segmented{display:none!important;}
+  #listView{display:flex!important;flex-direction:column;gap:16px;min-width:0;}
+  #calView{display:block!important;min-width:0;}
+  .fab{left:auto;right:44px;bottom:40px;transform:none;}
+  .fab:active{transform:scale(.9);}
+  .sheet{
+    bottom:auto;top:50%;border-radius:26px;max-width:460px;
+    transform:translate(-50%,-46%) scale(.97);opacity:0;pointer-events:none;
+    transition:transform .22s ease, opacity .22s ease;
+    box-shadow:0 30px 80px -30px rgba(90,60,110,.5);
+  }
+  .sheet.open{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto;}
+  .task .body:hover .label{color:var(--accent);}
+  .task:hover .del,.task:hover .drag{color:var(--soft);}
+}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
 </style>
 </head>
@@ -474,7 +498,7 @@ body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v11</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v12</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -595,7 +619,7 @@ const App = {
     this.state.editRoutineId = null;
     this.showRoutineFields(false);
     this.fillSheet({ text:'', note:'', prio:0, icon:'🌸',
-      date: this.state.view==='cal' ? this.state.selDate : '', time:'', end:'' });
+      date: (this.state.view==='cal' || this.isDesktop()) ? (this.state.selDate||'') : '', time:'', end:'' });
     document.getElementById('sheetTitle').textContent = 'Neues To-Do';
     document.getElementById('saveBtn').textContent = 'Hinzufügen';
     document.getElementById('sheetDelBtn').style.display = 'none';
@@ -872,9 +896,18 @@ const App = {
   },
 
   /* ---------- Render ---------- */
+  isDesktop(){ return window.matchMedia('(min-width:1000px)').matches; },
   render(){
-    if(this.state.view === 'cal') this.renderCal();
-    else this.renderList();
+    if(this.isDesktop()){
+      // Laptop/PC: Aufgaben und Kalender nebeneinander, beides rendern
+      if(!this.state.selDate) this.state.selDate = this.fmtDate(new Date());
+      this.renderList();
+      this.renderCal();
+    } else if(this.state.view === 'cal'){
+      this.renderCal();
+    } else {
+      this.renderList();
+    }
     this.renderSoundUI();
     this.renderNameUI();
   },
@@ -1064,6 +1097,10 @@ const App = {
     setupDrag(document.getElementById('list'));
     setupDrag(document.getElementById('dayList'));
     setupTimeDrag(document.getElementById('dayList'));
+    // Beim Wechsel Handy-/Desktop-Breite das Layout neu aufbauen
+    window.matchMedia('(min-width:1000px)').addEventListener('change', ()=>{
+      this.setView(this.state.view);
+    });
   }
 };
 
