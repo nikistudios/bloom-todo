@@ -235,6 +235,14 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
   border:none;background:transparent;color:#d9cbe1;font-size:1.05rem;cursor:pointer;padding:6px;border-radius:10px;flex:none;
 }
 .task .del:active{color:var(--accent);}
+.task .drag{
+  border:none;background:transparent;color:#d9cbe1;font-size:1.15rem;cursor:grab;padding:6px 4px;flex:none;
+  touch-action:none;user-select:none;-webkit-user-select:none;
+}
+.task.dragging{
+  opacity:.92;transform:scale(1.02);box-shadow:0 18px 40px -14px rgba(150,110,180,.75);
+  position:relative;z-index:15;
+}
 .empty{text-align:center;color:var(--soft);padding:44px 20px;font-size:.92rem;}
 .empty .em{font-size:2.5rem;display:block;margin-bottom:10px;}
 
@@ -399,23 +407,27 @@ body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob
   <div class="grab"></div>
   <h2 id="sheetTitle">Neues To-Do</h2>
   <input type="text" id="taskInput" placeholder="Was steht an?" maxlength="140" autocomplete="off" />
-  <div class="field-label">Notiz (optional)</div>
-  <input type="text" id="noteInput" placeholder="z. B. Unterlagen mitnehmen" maxlength="200" autocomplete="off" />
+  <div id="fNote">
+    <div class="field-label">Notiz (optional)</div>
+    <input type="text" id="noteInput" placeholder="z. B. Unterlagen mitnehmen" maxlength="200" autocomplete="off" />
+  </div>
   <div class="field-label">Symbol</div>
   <div class="icon-chips" id="iconChips"></div>
-  <div class="field-label">Datum</div>
-  <input type="date" id="dateInput" />
+  <div id="fDate">
+    <div class="field-label">Datum</div>
+    <input type="date" id="dateInput" />
+  </div>
   <div class="field-row" style="margin-top:13px">
     <div>
       <div class="field-label" style="margin-top:0">Von</div>
       <input type="time" id="timeInput" />
     </div>
-    <div>
+    <div id="fEnd">
       <div class="field-label" style="margin-top:0">Bis</div>
       <input type="time" id="endInput" />
     </div>
   </div>
-  <div class="chips">
+  <div class="chips" id="fPrio">
     <button class="chip active" id="chipNormal" onclick="App.setPrio(0)">Normal</button>
     <button class="chip" id="chipWichtig" onclick="App.setPrio(1)">💗 Wichtig</button>
   </div>
@@ -441,6 +453,9 @@ body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob
   <button class="menu-item" onclick="App.cycleTheme()">
     <span class="ico">🎨</span> Farbwelt <span class="hint" id="themeHint">Rosé</span>
   </button>
+  <button class="menu-item" onclick="App.resetRoutines()">
+    <span class="ico">↻</span> Routinen wiederherstellen <span class="hint">Aufwachen &amp; Schlafen</span>
+  </button>
   <button class="menu-item" onclick="App.toggleSound()">
     <span class="ico" id="soundIco">🔊</span> Sounds <span class="hint" id="soundHint">an</span>
   </button>
@@ -451,7 +466,7 @@ body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v7</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v8</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -492,6 +507,10 @@ const Sound = (() => {
 const KEY = 'bloom_v1';
 const THEMES = [ ['','Rosé'], ['theme-lavender','Lavendel'], ['theme-peach','Peach'], ['theme-mint','Mint'] ];
 const ICONS = ['🌸','⏰','📚','💼','🏋️','🛒','🍽','🌙'];
+const DEFAULT_ROUTINES = [
+  { id:'r_wake',  text:'Aufwachen!',     icon:'⏰', time:'08:00' },
+  { id:'r_sleep', text:'Schlafen gehen', icon:'🌙', time:'22:00' }
+];
 const WD = ['So','Mo','Di','Mi','Do','Fr','Sa'];
 const WD_LONG = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
 const MONTHS = ['Jan','Feb','März','Apr','Mai','Juni','Juli','Aug','Sept','Okt','Nov','Dez'];
@@ -499,11 +518,13 @@ const MONTHS = ['Jan','Feb','März','Apr','Mai','Juni','Juli','Aug','Sept','Okt'
 const App = {
   state: {
     todos: [],                     // {id, text, note, prio, done, created, date:'YYYY-MM-DD'|'', time:'HH:MM'|'', end:'HH:MM'|''}
-    meta: { streak:0, lastDone:'', sound:true, theme:0, name:'Sophia' },
+    meta: { streak:0, lastDone:'', sound:true, theme:0, name:'Sophia',
+            routines: DEFAULT_ROUTINES.map(r=>Object.assign({},r)), routineDone:{} },
     filter: 'all',
     view: 'list',
     selDate: '',                   // ausgewählter Tag im Kalender
     editId: null,
+    editRoutineId: null,
     newPrio: 0,
     newIcon: '🌸'
   },
@@ -515,6 +536,8 @@ const App = {
       if(Array.isArray(raw.todos)) this.state.todos = raw.todos;
       if(raw.meta) this.state.meta = Object.assign(this.state.meta, raw.meta);
     }catch(e){ /* korrupte Daten ignorieren, frisch starten */ }
+    // Sortier-Reihenfolge für Bestandsdaten nachrüsten
+    this.state.todos.forEach((t,i)=>{ if(typeof t.ord !== 'number') t.ord = i; });
   },
   save(){
     localStorage.setItem(KEY, JSON.stringify({ todos:this.state.todos, meta:this.state.meta }));
@@ -555,8 +578,14 @@ const App = {
   },
 
   /* ---------- Sheet: Neu / Bearbeiten ---------- */
+  showRoutineFields(isRoutine){
+    ['fNote','fDate','fEnd','fPrio'].forEach(id =>
+      document.getElementById(id).style.display = isRoutine ? 'none' : '');
+  },
   openAdd(){
     this.state.editId = null;
+    this.state.editRoutineId = null;
+    this.showRoutineFields(false);
     this.fillSheet({ text:'', note:'', prio:0, icon:'🌸',
       date: this.state.view==='cal' ? this.state.selDate : '', time:'', end:'' });
     document.getElementById('sheetTitle').textContent = 'Neues To-Do';
@@ -569,8 +598,22 @@ const App = {
     const t = this.state.todos.find(x=>x.id===id);
     if(!t) return;
     this.state.editId = id;
+    this.state.editRoutineId = null;
+    this.showRoutineFields(false);
     this.fillSheet({ text:t.text, note:t.note||'', prio:t.prio||0, icon:t.icon||'🌸', date:t.date||'', time:t.time||'', end:t.end||'' });
     document.getElementById('sheetTitle').textContent = 'To-Do bearbeiten';
+    document.getElementById('saveBtn').textContent = 'Speichern';
+    document.getElementById('sheetDelBtn').style.display = 'block';
+    this.openSheet('addSheet');
+  },
+  openRoutine(id){
+    const r = (this.state.meta.routines||[]).find(x=>x.id===id);
+    if(!r) return;
+    this.state.editId = null;
+    this.state.editRoutineId = id;
+    this.showRoutineFields(true);
+    this.fillSheet({ text:r.text, note:'', prio:0, icon:r.icon, date:'', time:r.time, end:'' });
+    document.getElementById('sheetTitle').textContent = 'Routine bearbeiten (gilt für jeden Tag)';
     document.getElementById('saveBtn').textContent = 'Speichern';
     document.getElementById('sheetDelBtn').style.display = 'block';
     this.openSheet('addSheet');
@@ -598,6 +641,16 @@ const App = {
   saveTask(){
     const text = document.getElementById('taskInput').value.trim();
     if(!text) return;
+    if(this.state.editRoutineId){
+      const r = (this.state.meta.routines||[]).find(x=>x.id===this.state.editRoutineId);
+      if(r){
+        r.text = text;
+        r.icon = this.state.newIcon;
+        r.time = document.getElementById('timeInput').value || r.time;
+      }
+      this.save(); this.closeSheets(); this.render(); toast('Routine gespeichert ✔');
+      return;
+    }
     const note = document.getElementById('noteInput').value.trim();
     const date = document.getElementById('dateInput').value || '';
     let time = document.getElementById('timeInput').value || '';
@@ -609,10 +662,11 @@ const App = {
       if(t){ t.text=text; t.note=note; t.prio=this.state.newPrio; t.icon=this.state.newIcon; t.date=date; t.time=time; t.end=end; }
       toast('Gespeichert ✔');
     } else {
+      const minOrd = this.state.todos.length ? Math.min.apply(null, this.state.todos.map(t=>t.ord||0)) : 1;
       this.state.todos.unshift({
         id: String(Date.now()) + Math.floor(Math.random()*1000),
         text, note, prio: this.state.newPrio, icon: this.state.newIcon,
-        done:false, created: Date.now(), date, time, end
+        done:false, created: Date.now(), date, time, end, ord: minOrd - 1
       });
       Sound.add();
     }
@@ -620,10 +674,47 @@ const App = {
     this.closeSheets(); this.render();
   },
   removeFromSheet(){
+    if(this.state.editRoutineId){
+      const id = this.state.editRoutineId;
+      this.state.meta.routines = (this.state.meta.routines||[]).filter(r=>r.id!==id);
+      this.state.editRoutineId = null;
+      Sound.del();
+      this.save(); this.closeSheets(); this.render();
+      toast('Routine entfernt – im Menü wiederherstellbar');
+      return;
+    }
     if(!this.state.editId) return;
     const id = this.state.editId;
     this.closeSheets();
     this.remove(id);
+  },
+  toggleRoutine(id){
+    const d = this.state.selDate;
+    const map = this.state.meta.routineDone || (this.state.meta.routineDone = {});
+    const arr = map[d] || (map[d] = []);
+    const i = arr.indexOf(id);
+    if(i >= 0){
+      arr.splice(i,1);
+      Sound.uncomplete();
+    } else {
+      arr.push(id);
+      Sound.complete();
+      const el = document.querySelector('[data-id="'+id+'"]');
+      if(el) burst(el);
+      this.updateStreak();
+    }
+    this.save(); this.render();
+  },
+  resetRoutines(){
+    this.state.meta.routines = DEFAULT_ROUTINES.map(r=>Object.assign({},r));
+    this.save(); this.closeSheets(); this.render();
+    toast('Routinen wiederhergestellt ↻');
+  },
+  applyOrder(ids){
+    const items = ids.map(id=>this.state.todos.find(t=>t.id===id)).filter(Boolean);
+    const ords = items.map(t=>t.ord||0).sort((a,b)=>a-b);
+    items.forEach((t,i)=>{ t.ord = ords[i]; });
+    this.save(); this.render();
   },
 
   /* ---------- Aktionen ---------- */
@@ -763,6 +854,7 @@ const App = {
         (t.note ? '<div class="note">'+esc(t.note)+'</div>' : '')+
         (chips.length ? '<div class="chips-row">'+chips.join('')+'</div>' : '')+
       '</div>'+
+      '<button class="drag" aria-label="Verschieben">⠿</button>'+
       '<button class="del" onclick="App.remove(\''+t.id+'\')" aria-label="Löschen">✕</button>'+
     '</div>';
   },
@@ -786,7 +878,7 @@ const App = {
     const filtered = s.todos
       .filter(t => s.filter==='all' ? true : s.filter==='active' ? !t.done : t.done)
       .slice()
-      .sort((a,b) => (a.done - b.done) || ((b.prio||0) - (a.prio||0)) || (b.created - a.created));
+      .sort((a,b) => (a.done - b.done) || ((a.ord||0) - (b.ord||0)));
 
     if(filtered.length === 0){
       const msg = s.filter==='done' ? 'Noch nichts erledigt – fang an.'
@@ -844,10 +936,15 @@ const App = {
 
     const dayTasks = s.todos.filter(t => t.date === s.selDate);
     const untimed = dayTasks.filter(t => !t.time)
-      .sort((a,b) => (a.done - b.done) || ((b.prio||0)-(a.prio||0)) || (b.created - a.created));
+      .sort((a,b) => (a.done - b.done) || ((a.ord||0) - (b.ord||0)));
+    const doneRoutines = (s.meta.routineDone||{})[s.selDate] || [];
+    const routines = (s.meta.routines||[]).map(r => ({
+      id:r.id, text:r.text, icon:r.icon, time:r.time, end:'', note:'', prio:0,
+      done: doneRoutines.indexOf(r.id) >= 0, routine:true
+    }));
     const timed = dayTasks.filter(t => t.time)
-      .slice()
-      .sort((a,b) => a.time < b.time ? -1 : a.time > b.time ? 1 : ((b.prio||0)-(a.prio||0)));
+      .concat(routines)
+      .sort((a,b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
 
     let html = '';
     if(untimed.length){
@@ -875,11 +972,14 @@ const App = {
         }
         let sub = t.time + (t.end ? ' – '+t.end : '');
         let subCls = '';
+        if(t.routine) sub += ' ↻';
         if(isToday && !t.done && t.end && t.time <= nowHM && nowHM < t.end){
           sub = 'Noch '+fmtDur(minutesBetween(nowHM, t.end));
           subCls = ' now';
         }
         if(t.prio===1 && !t.done) sub += ' · 💗 Wichtig';
+        const editFn = t.routine ? 'App.openRoutine' : 'App.openEdit';
+        const checkFn = t.routine ? 'App.toggleRoutine' : 'App.toggle';
         rows += '<div class="tlx-row'+(t.done?' done':'')+'" data-id="'+t.id+'">'+
           '<div class="tlx-time">'+
             '<span class="t1">'+t.time+'</span>'+
@@ -887,12 +987,12 @@ const App = {
           '</div>'+
           '<div class="tlx-rail"><div class="tlx-bubble'+(t.end?' pill':'')+'">'+(t.icon||'🌸')+'</div></div>'+
           '<div class="tlx-body">'+
-            '<div class="tlx-info" onclick="App.openEdit(\''+t.id+'\')">'+
+            '<div class="tlx-info" onclick="'+editFn+'(\''+t.id+'\')">'+
               '<div class="tlx-sub'+subCls+'">'+sub+'</div>'+
               '<div class="tlx-title">'+esc(t.text)+'</div>'+
               (t.note ? '<div class="tlx-note">'+esc(t.note)+'</div>' : '')+
             '</div>'+
-            '<button class="tlx-check" onclick="App.toggle(\''+t.id+'\')" aria-label="Abhaken">'+
+            '<button class="tlx-check" onclick="'+checkFn+'(\''+t.id+'\')" aria-label="Abhaken">'+
               '<svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6"/></svg>'+
             '</button>'+
           '</div>'+
@@ -949,8 +1049,49 @@ const App = {
     this.render();
     // "Jetzt"-Linie und Restzeit-Anzeige minütlich aktualisieren
     setInterval(()=>{ this.renderHeader(); if(this.state.view==='cal') this.render(); }, 60000);
+    setupDrag(document.getElementById('list'));
+    setupDrag(document.getElementById('dayList'));
   }
 };
+
+/* Aufgaben per Ziehen am ⠿-Griff umsortieren (Touch + Maus) */
+function setupDrag(container){
+  let row = null, moved = false;
+  const rows = () => Array.prototype.slice.call(container.querySelectorAll('.task[data-id]'));
+
+  function start(target){
+    const h = target.closest ? target.closest('.drag') : null;
+    if(!h) return false;
+    row = h.closest('.task');
+    moved = false;
+    if(row) row.classList.add('dragging');
+    return !!row;
+  }
+  function move(y){
+    if(!row) return;
+    moved = true;
+    const others = rows().filter(r => r !== row);
+    for(const r of others){
+      const rect = r.getBoundingClientRect();
+      if(y > rect.top && y < rect.top + rect.height/2){ container.insertBefore(row, r); break; }
+      if(y >= rect.top + rect.height/2 && y < rect.bottom){ container.insertBefore(row, r.nextSibling); break; }
+    }
+  }
+  function end(){
+    if(!row) return;
+    row.classList.remove('dragging');
+    if(moved) App.applyOrder(rows().map(r => r.dataset.id));
+    row = null;
+  }
+
+  container.addEventListener('touchstart', e => { if(start(e.target)) e.preventDefault(); }, {passive:false});
+  container.addEventListener('touchmove', e => { if(row){ e.preventDefault(); move(e.touches[0].clientY); } }, {passive:false});
+  container.addEventListener('touchend', end);
+  container.addEventListener('touchcancel', end);
+  container.addEventListener('mousedown', e => { if(start(e.target)) e.preventDefault(); });
+  document.addEventListener('mousemove', e => { if(row) move(e.clientY); });
+  document.addEventListener('mouseup', end);
+}
 
 function minutesBetween(a, b){
   const [h1,m1] = a.split(':').map(Number), [h2,m2] = b.split(':').map(Number);
