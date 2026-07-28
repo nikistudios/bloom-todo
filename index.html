@@ -258,7 +258,7 @@ body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob
 <div class="sheet" id="addSheet">
   <div class="grab"></div>
   <h2>Neues To-Do 🌸</h2>
-  <input type="text" id="taskInput" placeholder="Was steht heute an, Süße?" maxlength="140" autocomplete="off"
+  <input type="text" id="taskInput" placeholder="Was steht an?" maxlength="140" autocomplete="off"
          onkeydown="if(event.key==='Enter')App.saveTask()" />
   <div class="chips">
     <button class="chip active" id="chipNormal" onclick="App.setPrio(0)">Normal</button>
@@ -267,9 +267,21 @@ body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob
   <button class="btn-primary" onclick="App.saveTask()">Hinzufügen</button>
 </div>
 
+<div class="sheet" id="nameSheet">
+  <div class="grab"></div>
+  <h2>Wie heißt du?</h2>
+  <input type="text" id="nameInput" placeholder="Dein Name" maxlength="20" autocomplete="off"
+         onkeydown="if(event.key==='Enter')App.saveName()" />
+  <div style="height:16px"></div>
+  <button class="btn-primary" onclick="App.saveName()">Speichern</button>
+</div>
+
 <div class="sheet" id="menuSheet">
   <div class="grab"></div>
   <h2>Menü</h2>
+  <button class="menu-item" onclick="App.openName()">
+    <span class="ico">👤</span> Dein Name <span class="hint" id="nameHint">–</span>
+  </button>
   <button class="menu-item" onclick="App.cycleTheme()">
     <span class="ico">🎨</span> Farbwelt <span class="hint" id="themeHint">Rosé</span>
   </button>
@@ -326,7 +338,7 @@ const THEMES = [ ['','Rosé'], ['theme-lavender','Lavendel'], ['theme-peach','Pe
 const App = {
   state: {
     todos: [],                     // {id, text, prio, done, created}
-    meta: { streak:0, lastDone:'', sound:true, theme:0 },
+    meta: { streak:0, lastDone:'', sound:true, theme:0, name:'Sophia' },
     filter: 'all',
     newPrio: 0
   },
@@ -378,7 +390,7 @@ const App = {
       if(el) burst(el);
       this.updateStreak();
       if(this.state.todos.length && this.state.todos.every(x=>x.done)){
-        setTimeout(()=>{ Sound.allDone(); rain(); toast('Alles erledigt, du Queen 👑'); }, 350);
+        setTimeout(()=>{ Sound.allDone(); rain(); toast('Alles erledigt. Stark durchgezogen 🔥'); }, 350);
       }
     } else {
       Sound.uncomplete();
@@ -425,6 +437,18 @@ const App = {
   openMenu(){ this.openSheet('menuSheet'); },
 
   /* ---------- Menü ---------- */
+  openName(){
+    document.getElementById('nameInput').value = this.state.meta.name || '';
+    this.openSheet('nameSheet');
+    setTimeout(()=>document.getElementById('nameInput').focus(), 350);
+  },
+  saveName(){
+    this.state.meta.name = document.getElementById('nameInput').value.trim().slice(0,20);
+    this.save(); this.closeSheets(); this.renderHeader(); this.renderNameUI();
+  },
+  renderNameUI(){
+    document.getElementById('nameHint').textContent = this.state.meta.name || '–';
+  },
   cycleTheme(){
     this.state.meta.theme = (this.state.meta.theme + 1) % THEMES.length;
     this.save(); this.applyTheme(); Sound.add();
@@ -465,7 +489,7 @@ const App = {
         if(!Array.isArray(data.todos)) throw new Error('bad');
         this.state.todos = data.todos;
         if(data.meta) this.state.meta = Object.assign(this.state.meta, data.meta);
-        this.save(); this.closeSheets(); this.applyTheme(); this.render();
+        this.save(); this.closeSheets(); this.applyTheme(); this.renderHeader(); this.render();
         toast('Backup importiert 📥');
       }catch(e){ toast('Datei konnte nicht gelesen werden 😕'); }
       ev.target.value = '';
@@ -490,8 +514,8 @@ const App = {
       .sort((a,b) => (a.done - b.done) || (b.prio - a.prio) || (b.created - a.created));
 
     if(filtered.length === 0){
-      const msg = s.filter==='done' ? 'Noch nichts erledigt – gleich geht\'s los!'
-                : s.filter==='active' ? 'Alles erledigt, du Queen 👑'
+      const msg = s.filter==='done' ? 'Noch nichts erledigt – fang an.'
+                : s.filter==='active' ? 'Alles erledigt. Sauber durchgezogen.'
                 : 'Noch nichts geplant.<br>Tipp unten auf +';
       document.getElementById('list').innerHTML =
         '<div class="empty"><span class="em">'+(s.filter==='active'?'🎉':'🌿')+'</span>'+msg+'</div>';
@@ -516,30 +540,53 @@ const App = {
     document.getElementById('pct').textContent = pct+'%';
     document.getElementById('ringFill').style.strokeDashoffset = 214 - 214*pct/100;
     const big = document.getElementById('pBig'), small = document.getElementById('pSmall');
-    if(total === 0){ big.textContent = "Los geht's 💫"; small.textContent = 'Noch nichts geplant'; }
-    else if(done === total){ big.textContent = 'Alles erledigt! 🎉'; small.textContent = 'Du bist unglaublich 💗'; }
-    else { big.textContent = done+' von '+total+' geschafft'; small.textContent = (total-done)+' noch offen 🌸'; }
+    if(total === 0){ big.textContent = "Los geht's"; small.textContent = 'Noch nichts geplant'; }
+    else if(done === total){ big.textContent = 'Alles erledigt 🎉'; small.textContent = 'Nichts mehr offen. Respekt.'; }
+    else { big.textContent = done+' von '+total+' geschafft'; small.textContent = (total-done)+' noch offen'; }
     document.getElementById('streakNum').textContent = s.meta.streak || 0;
     document.getElementById('count').textContent = s.todos.filter(t=>!t.done).length + ' offen';
 
     this.renderSoundUI();
+    this.renderNameUI();
   },
 
   renderHeader(){
     const d = new Date();
     const days = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
     const months = ['Jan','Feb','März','Apr','Mai','Juni','Juli','Aug','Sept','Okt','Nov','Dez'];
-    const quotes = [
-      'Ein kleiner Schritt nach dem anderen 🌷','Du schaffst das, wie immer 💪',
-      'Selfcare zählt auch als To-Do 🛁','Heute wird dein Tag ☀️',
-      'Kleine Erfolge, große Freude ✨','Sei stolz auf dich 💗','Progress over perfection 🌸'
-    ];
     const h = d.getHours();
+    const name = this.state.meta.name;
+    const withName = txt => name ? txt + ', ' + name : txt;
+
     document.getElementById('hello').textContent =
-      h<11 ? 'Guten Morgen ☀️' : h<17 ? 'Hey Beautiful ✨' : h<22 ? 'Guten Abend 🌙' : 'Schlaf gut 🌛';
+      h<11 ? withName('Good morning') : h<17 ? withName('Good afternoon') : withName('Good evening');
     document.getElementById('date').innerHTML =
       days[d.getDay()]+', <b>'+d.getDate()+'. '+months[d.getMonth()]+'</b>';
-    document.getElementById('quote').textContent = quotes[d.getDate() % quotes.length];
+
+    // Sprüche je nach Tageszeit – direkt, nicht kitschig
+    const morning = [
+      'Win the first hour. The rest will follow.',
+      'Start before you feel ready.',
+      'Discipline beats motivation. Show up.',
+      'One focused hour beats a scattered day.',
+      withName('Set the tone early') + '.'
+    ];
+    const afternoon = [
+      withName('Afternoon wins coming your way') + '.',
+      'Push yourself — no one else is going to do it for you.',
+      'Done is better than perfect. Keep moving.',
+      'Consistency is a form of self-respect.',
+      'Nobody is coming to save your to-do list.'
+    ];
+    const evening = [
+      'Finish strong. Future you is watching.',
+      'One more win before you close the day.',
+      'What you do daily becomes who you are.',
+      'Rest is earned. Almost there.',
+      withName('End the day on your terms') + '.'
+    ];
+    const pool = h<11 ? morning : h<17 ? afternoon : evening;
+    document.getElementById('quote').textContent = pool[d.getDate() % pool.length];
   },
 
   init(){
