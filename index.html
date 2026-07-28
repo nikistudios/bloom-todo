@@ -201,6 +201,23 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 .tlx-now .t{width:50px;flex:none;text-align:right;padding-right:8px;font-size:.72rem;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums;}
 .tlx-now .ln{flex:1;height:2px;border-radius:2px;background:var(--accent);opacity:.55;}
 
+/* Uhrzeit-/Dauer-Chips im Sheet */
+.time-row{
+  display:flex;gap:6px;overflow-x:auto;padding:2px 2px 6px;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+.time-row::-webkit-scrollbar{display:none;}
+.tchip{
+  flex:none;min-width:48px;padding:11px 12px;border-radius:13px;
+  border:1px solid var(--line);background:#faf7fb;color:var(--soft);
+  font-family:inherit;font-size:.88rem;font-weight:700;cursor:pointer;
+  font-variant-numeric:tabular-nums;
+}
+.tchip.active{
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  border-color:transparent;color:#fff;
+}
+
 /* Icon-Auswahl im Sheet */
 .icon-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:2px;}
 .icon-chip{
@@ -449,15 +466,12 @@ body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob
     <div class="field-label">Datum</div>
     <input type="date" id="dateInput" />
   </div>
-  <div class="field-row" style="margin-top:13px">
-    <div>
-      <div class="field-label" style="margin-top:0">Von</div>
-      <input type="time" id="timeInput" />
-    </div>
-    <div id="fEnd">
-      <div class="field-label" style="margin-top:0">Bis</div>
-      <input type="time" id="endInput" />
-    </div>
+  <div class="field-label">Uhrzeit</div>
+  <div class="time-row" id="hourChips"></div>
+  <div class="time-row" id="minChips" style="margin-top:6px"></div>
+  <div id="fEnd">
+    <div class="field-label">Dauer</div>
+    <div class="time-row" id="durChips"></div>
   </div>
   <div class="chips" id="fPrio">
     <button class="chip active" id="chipNormal" onclick="App.setPrio(0)">Normal</button>
@@ -498,7 +512,7 @@ body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v12</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v13</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -558,7 +572,10 @@ const App = {
     editId: null,
     editRoutineId: null,
     newPrio: 0,
-    newIcon: '🌸'
+    newIcon: '🌸',
+    selHour: null,
+    selMin: 0,
+    newDur: 0
   },
 
   /* ---------- Persistenz ---------- */
@@ -656,10 +673,49 @@ const App = {
     document.getElementById('taskInput').value = v.text;
     document.getElementById('noteInput').value = v.note;
     document.getElementById('dateInput').value = v.date;
-    document.getElementById('timeInput').value = v.time;
-    document.getElementById('endInput').value = v.end;
+    if(v.time){
+      const p = v.time.split(':');
+      this.state.selHour = +p[0]; this.state.selMin = +p[1];
+    } else {
+      this.state.selHour = null; this.state.selMin = 0;
+    }
+    this.state.newDur = (v.time && v.end) ? Math.max(0, minutesBetween(v.time, v.end)) : 0;
     this.setPrio(v.prio);
     this.setIcon(v.icon);
+    this.renderTimeUI();
+    setTimeout(()=>{
+      const a = document.getElementById('hourChips').querySelector('.tchip.active');
+      if(a) a.scrollIntoView({inline:'center', block:'nearest'});
+    }, 380);
+  },
+  setHour(h){ this.state.selHour = h; this.renderTimeUI(); },
+  setMin(m){ this.state.selMin = m; this.renderTimeUI(); },
+  setDur(d){ this.state.newDur = d; this.renderTimeUI(); },
+  renderTimeUI(){
+    const s = this.state;
+    // Stunden: "–" für keine Uhrzeit, dann 5–23 Uhr, frühe Stunden hinten
+    const hours = []; for(let i=5;i<=23;i++) hours.push(i); for(let i=0;i<=4;i++) hours.push(i);
+    document.getElementById('hourChips').innerHTML =
+      '<button class="tchip'+(s.selHour===null?' active':'')+'" onclick="App.setHour(null)">–</button>' +
+      hours.map(h => '<button class="tchip'+(s.selHour===h?' active':'')+'" onclick="App.setHour('+h+')">'+String(h).padStart(2,'0')+'</button>').join('');
+    // Minuten nur zeigen, wenn eine Stunde gewählt ist
+    const mRow = document.getElementById('minChips');
+    if(s.selHour === null){
+      mRow.style.display = 'none';
+    } else {
+      mRow.style.display = 'flex';
+      let mins = [0,15,30,45];
+      if(mins.indexOf(s.selMin) < 0){ mins.push(s.selMin); mins.sort((a,b)=>a-b); }
+      mRow.innerHTML = mins.map(m => '<button class="tchip'+(s.selMin===m?' active':'')+'" onclick="App.setMin('+m+')">:'+String(m).padStart(2,'0')+'</button>').join('');
+    }
+    // Dauer nur bei gesetzter Uhrzeit (und nicht bei Routinen)
+    const fEnd = document.getElementById('fEnd');
+    fEnd.style.display = (s.editRoutineId || s.selHour===null) ? 'none' : '';
+    let durs = [0,15,30,45,60,90,120,180,240];
+    if(durs.indexOf(s.newDur) < 0){ durs.push(s.newDur); durs.sort((a,b)=>a-b); }
+    const durLabel = d => d===0 ? 'Ohne' : d<60 ? d+'m' : d%60===0 ? (d/60)+'h' : Math.floor(d/60)+'h '+(d%60)+'m';
+    document.getElementById('durChips').innerHTML =
+      durs.map(d => '<button class="tchip'+(s.newDur===d?' active':'')+'" onclick="App.setDur('+d+')">'+durLabel(d)+'</button>').join('');
   },
   setIcon(ic){
     this.state.newIcon = ic;
@@ -675,22 +731,22 @@ const App = {
   saveTask(){
     const text = document.getElementById('taskInput').value.trim();
     if(!text) return;
+    const pickedTime = this.state.selHour===null ? '' :
+      String(this.state.selHour).padStart(2,'0')+':'+String(this.state.selMin).padStart(2,'0');
     if(this.state.editRoutineId){
       const r = (this.state.meta.routines||[]).find(x=>x.id===this.state.editRoutineId);
       if(r){
         r.text = text;
         r.icon = this.state.newIcon;
-        r.time = document.getElementById('timeInput').value || r.time;
+        r.time = pickedTime || r.time;
       }
       this.save(); this.closeSheets(); this.render(); toast('Routine gespeichert ✔');
       return;
     }
     const note = document.getElementById('noteInput').value.trim();
     const date = document.getElementById('dateInput').value || '';
-    let time = document.getElementById('timeInput').value || '';
-    let end = document.getElementById('endInput').value || '';
-    if(end && !time){ time = end; end = ''; }   // nur "Bis" gesetzt → als Startzeit werten
-    if(end && end <= time) end = '';            // Ende vor Start ergibt keinen Sinn
+    const time = pickedTime;
+    const end = (time && this.state.newDur) ? toHM(toMin(time) + this.state.newDur) : '';
     if(this.state.editId){
       const t = this.state.todos.find(x=>x.id===this.state.editId);
       if(t){ t.text=text; t.note=note; t.prio=this.state.newPrio; t.icon=this.state.newIcon; t.date=date; t.time=time; t.end=end; }
