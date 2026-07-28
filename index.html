@@ -474,7 +474,7 @@ body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v10</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v11</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1124,8 +1124,10 @@ function toHM(min){
    die Uhrzeit läuft live mit (5-Minuten-Raster) und wird beim Loslassen übernommen */
 function setupTimeDrag(container){
   const MIN_PER_PX = 0.8;   // 100px ziehen ≈ 80 Minuten
+  const EDGE = 130;         // Randzone in px: dort läuft die Zeit automatisch weiter
+  const EDGE_SPEED = 2.2;   // max. Minuten pro Frame in der Randzone (~130 min/s)
   let row=null, item=null, timer=null, startY=0, lastY=0, active=false;
-  let origMin=0, dur=0, newMin=0, raf=null;
+  let origMin=0, dur=0, newMin=0, edge=0, raf=null, origTop=0, rowH=0;
 
   const findItem = id =>
     App.state.todos.find(t=>t.id===id) || (App.state.meta.routines||[]).find(r=>r.id===id);
@@ -1142,15 +1144,23 @@ function setupTimeDrag(container){
       origMin = toMin(item.time);
       dur = item.end ? minutesBetween(item.time, item.end) : 0;
       newMin = origMin;
+      edge = 0;
+      const rect = row.getBoundingClientRect();
+      origTop = rect.top; rowH = rect.height;
       row.classList.add('dragging');
+      raf = requestAnimationFrame(step);
     }, 300);
   }
-  function paint(){
-    raf = null;
-    if(!row || !active) return;
+  function step(){
+    if(!row || !active){ raf = null; return; }
+    const vh = window.innerHeight;
+
+    // Randzone: Finger oben/unten halten lässt die Zeit weiterlaufen
+    if(lastY < EDGE) edge -= ((EDGE - lastY) / EDGE) * EDGE_SPEED;
+    else if(lastY > vh - EDGE) edge += ((lastY - (vh - EDGE)) / EDGE) * EDGE_SPEED;
+
     const dy = lastY - startY;
-    row.style.transform = 'translateY('+dy+'px) scale(1.015)';
-    let m = Math.round((origMin + dy*MIN_PER_PX)/5)*5;
+    let m = Math.round((origMin + dy*MIN_PER_PX + edge)/5)*5;
     m = Math.max(0, Math.min(23*60+55 - dur, m));
     if(m !== newMin){
       newMin = m;
@@ -1159,13 +1169,20 @@ function setupTimeDrag(container){
       if(t2) t2.textContent = toHM(m + dur);
       if(sub) sub.textContent = toHM(m) + (dur ? ' – '+toHM(m + dur) : '') + (item.id && String(item.id).indexOf('r_')===0 ? ' ↻' : '');
     }
+
+    // Sichtbar am Finger folgen, aber im Bildschirm bleiben
+    let vis = dy;
+    const minVis = 70 - origTop;
+    const maxVis = (vh - 100) - (origTop + rowH);
+    vis = Math.max(minVis, Math.min(maxVis, vis));
+    row.style.transform = 'translateY('+vis+'px) scale(1.015)';
+
+    raf = requestAnimationFrame(step);
   }
-  function move(y){
-    lastY = y;
-    if(active && !raf) raf = requestAnimationFrame(paint);
-  }
+  function move(y){ lastY = y; }
   function finish(){
     clearTimer();
+    if(raf){ cancelAnimationFrame(raf); raf = null; }
     if(row && active){
       row.classList.remove('dragging');
       row.style.transform = '';
