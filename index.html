@@ -210,14 +210,14 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
   letter-spacing:.4px;text-align:center;margin-bottom:5px;
 }
 .wheel{
-  position:relative;height:132px;overflow-y:auto;border-radius:15px;
+  position:relative;height:120px;overflow-y:auto;border-radius:15px;
   background:#faf7fb;border:1px solid var(--line);
   scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;
 }
 .wheel::-webkit-scrollbar{display:none;}
-.wheel .pad{height:44px;}
+.wheel .pad{height:40px;}
 .witem{
-  height:44px;display:flex;align-items:center;justify-content:center;
+  height:40px;display:flex;align-items:center;justify-content:center;
   scroll-snap-align:center;font-weight:700;font-size:.98rem;color:var(--faint);
   font-variant-numeric:tabular-nums;
 }
@@ -226,8 +226,8 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 /* Icon-Auswahl im Sheet */
 .icon-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:2px;}
 .icon-chip{
-  width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:#faf7fb;
-  font-size:1.25rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  width:38px;height:38px;border-radius:12px;border:1px solid var(--line);background:#faf7fb;
+  font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
 }
 .icon-chip.active{background:rgba(229,139,169,.12);border-color:rgba(229,139,169,.5);}
 
@@ -305,8 +305,16 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
   max-height:82vh;overflow-y:auto;
 }
 .sheet.open{transform:translate(-50%,0);}
-.sheet .grab{width:42px;height:4px;border-radius:4px;background:var(--faint);opacity:.5;margin:0 auto 16px;}
+.sheet .grab{width:42px;height:4px;border-radius:4px;background:var(--faint);opacity:.5;margin:0 auto 14px;}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
 .sheet h2{font-size:1.08rem;font-weight:800;margin-bottom:14px;}
+.sheet-head h2{margin-bottom:0;}
+.sheet-del{
+  display:none;border:none;cursor:pointer;flex:none;
+  background:rgba(229,139,169,.12);color:var(--accent);
+  font-family:inherit;font-size:.8rem;font-weight:700;padding:9px 15px;border-radius:12px;
+}
+.sheet-del:active{background:rgba(229,139,169,.25);}
 .sheet input[type=text],.sheet input[type=date],.sheet input[type=time]{
   width:100%;background:#faf7fb;border:1px solid var(--line);border-radius:15px;
   color:var(--ink);font-family:inherit;font-size:1rem;padding:13px 15px;outline:none;
@@ -317,7 +325,7 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 .field-label{font-size:.74rem;font-weight:700;color:var(--soft);margin:13px 4px 6px;text-transform:uppercase;letter-spacing:.4px;}
 .field-row{display:flex;gap:8px;}
 .field-row>div{flex:1;min-width:0;}
-.chips{display:flex;gap:8px;margin:14px 0 18px;}
+.chips{display:flex;gap:8px;margin:12px 0 14px;}
 .chip{
   flex:1;border:1px solid var(--line);background:#faf7fb;color:var(--soft);
   font-family:inherit;font-size:.85rem;font-weight:700;padding:11px 0;border-radius:14px;cursor:pointer;
@@ -459,7 +467,10 @@ body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob
 
 <div class="sheet" id="addSheet">
   <div class="grab"></div>
-  <h2 id="sheetTitle">Neues To-Do</h2>
+  <div class="sheet-head">
+    <h2 id="sheetTitle">Neues To-Do</h2>
+    <button class="sheet-del" id="sheetDelBtn" onclick="App.removeFromSheet()">Löschen</button>
+  </div>
   <input type="text" id="taskInput" placeholder="Was steht an?" maxlength="140" autocomplete="off" />
   <div id="fNote">
     <div class="field-label">Notiz (optional)</div>
@@ -492,7 +503,6 @@ body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob
     <button class="chip" id="chipWichtig" onclick="App.setPrio(1)">💗 Wichtig</button>
   </div>
   <button class="btn-primary" id="saveBtn" onclick="App.saveTask()">Hinzufügen</button>
-  <button class="btn-ghost" id="sheetDelBtn" style="display:none" onclick="App.removeFromSheet()">Löschen</button>
 </div>
 
 <div class="sheet" id="nameSheet">
@@ -526,7 +536,7 @@ body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v14</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v15</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -729,7 +739,7 @@ const App = {
     document.getElementById('fEnd').style.display = s.editRoutineId ? 'none' : '';
     document.getElementById('wheels').classList.toggle('disabled', s.selHour===null);
     document.getElementById('noTimeBtn').classList.toggle('active', s.selHour===null);
-    const ITEM = 44;
+    const ITEM = 40;
     const setPos = (id, kind, val) => {
       const el = document.getElementById(id);
       const idx = Math.max(0, this.wheelVals(kind).indexOf(val));
@@ -1185,7 +1195,7 @@ const App = {
     setupDrag(document.getElementById('dayList'));
     setupTimeDrag(document.getElementById('dayList'));
     // Wheel-Scrollen: nach kurzem Stillstand einrasten und Wert übernehmen
-    const ITEM = 44;
+    const ITEM = 40;
     [['wheelH','h'],['wheelM','m'],['wheelD','d']].forEach(([id,kind])=>{
       const el = document.getElementById(id);
       let t = null;
