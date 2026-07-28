@@ -201,22 +201,27 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 .tlx-now .t{width:50px;flex:none;text-align:right;padding-right:8px;font-size:.72rem;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums;}
 .tlx-now .ln{flex:1;height:2px;border-radius:2px;background:var(--accent);opacity:.55;}
 
-/* Uhrzeit-/Dauer-Chips im Sheet */
-.time-row{
-  display:flex;gap:6px;overflow-x:auto;padding:2px 2px 6px;
-  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+/* Uhrzeit-Wheels im Sheet (wie iOS-Wecker) */
+.wheels{display:flex;gap:9px;transition:opacity .2s;}
+.wheels.disabled{opacity:.35;pointer-events:none;}
+.wheel-group{flex:1;min-width:0;}
+.wheel-cap{
+  font-size:.68rem;font-weight:700;color:var(--faint);text-transform:uppercase;
+  letter-spacing:.4px;text-align:center;margin-bottom:5px;
 }
-.time-row::-webkit-scrollbar{display:none;}
-.tchip{
-  flex:none;min-width:48px;padding:11px 12px;border-radius:13px;
-  border:1px solid var(--line);background:#faf7fb;color:var(--soft);
-  font-family:inherit;font-size:.88rem;font-weight:700;cursor:pointer;
+.wheel{
+  position:relative;height:132px;overflow-y:auto;border-radius:15px;
+  background:#faf7fb;border:1px solid var(--line);
+  scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+.wheel::-webkit-scrollbar{display:none;}
+.wheel .pad{height:44px;}
+.witem{
+  height:44px;display:flex;align-items:center;justify-content:center;
+  scroll-snap-align:center;font-weight:700;font-size:.98rem;color:var(--faint);
   font-variant-numeric:tabular-nums;
 }
-.tchip.active{
-  background:linear-gradient(135deg,var(--accent),var(--accent-2));
-  border-color:transparent;color:#fff;
-}
+.witem.on{color:var(--accent);font-size:1.12rem;}
 
 /* Icon-Auswahl im Sheet */
 .icon-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:2px;}
@@ -467,11 +472,20 @@ body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob
     <input type="date" id="dateInput" />
   </div>
   <div class="field-label">Uhrzeit</div>
-  <div class="time-row" id="hourChips"></div>
-  <div class="time-row" id="minChips" style="margin-top:6px"></div>
-  <div id="fEnd">
-    <div class="field-label">Dauer</div>
-    <div class="time-row" id="durChips"></div>
+  <button class="chip" id="noTimeBtn" style="width:100%;flex:none;margin-bottom:9px" onclick="App.toggleNoTime()">Keine Uhrzeit</button>
+  <div class="wheels" id="wheels">
+    <div class="wheel-group">
+      <div class="wheel-cap">Stunde</div>
+      <div class="wheel" id="wheelH"></div>
+    </div>
+    <div class="wheel-group">
+      <div class="wheel-cap">Minute</div>
+      <div class="wheel" id="wheelM"></div>
+    </div>
+    <div class="wheel-group" id="fEnd">
+      <div class="wheel-cap">Dauer</div>
+      <div class="wheel" id="wheelD"></div>
+    </div>
   </div>
   <div class="chips" id="fPrio">
     <button class="chip active" id="chipNormal" onclick="App.setPrio(0)">Normal</button>
@@ -512,7 +526,7 @@ body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v13</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v14</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -682,40 +696,57 @@ const App = {
     this.state.newDur = (v.time && v.end) ? Math.max(0, minutesBetween(v.time, v.end)) : 0;
     this.setPrio(v.prio);
     this.setIcon(v.icon);
-    this.renderTimeUI();
-    setTimeout(()=>{
-      const a = document.getElementById('hourChips').querySelector('.tchip.active');
-      if(a) a.scrollIntoView({inline:'center', block:'nearest'});
-    }, 380);
+    this.buildWheels();
+    // Scroll-Positionen setzen, sobald das Sheet aufgebaut ist
+    setTimeout(()=>this.syncWheels(false), 60);
+    setTimeout(()=>this.syncWheels(false), 400);
   },
-  setHour(h){ this.state.selHour = h; this.renderTimeUI(); },
-  setMin(m){ this.state.selMin = m; this.renderTimeUI(); },
-  setDur(d){ this.state.newDur = d; this.renderTimeUI(); },
-  renderTimeUI(){
-    const s = this.state;
-    // Stunden: "–" für keine Uhrzeit, dann 5–23 Uhr, frühe Stunden hinten
-    const hours = []; for(let i=5;i<=23;i++) hours.push(i); for(let i=0;i<=4;i++) hours.push(i);
-    document.getElementById('hourChips').innerHTML =
-      '<button class="tchip'+(s.selHour===null?' active':'')+'" onclick="App.setHour(null)">–</button>' +
-      hours.map(h => '<button class="tchip'+(s.selHour===h?' active':'')+'" onclick="App.setHour('+h+')">'+String(h).padStart(2,'0')+'</button>').join('');
-    // Minuten nur zeigen, wenn eine Stunde gewählt ist
-    const mRow = document.getElementById('minChips');
-    if(s.selHour === null){
-      mRow.style.display = 'none';
-    } else {
-      mRow.style.display = 'flex';
-      let mins = [0,15,30,45];
-      if(mins.indexOf(s.selMin) < 0){ mins.push(s.selMin); mins.sort((a,b)=>a-b); }
-      mRow.innerHTML = mins.map(m => '<button class="tchip'+(s.selMin===m?' active':'')+'" onclick="App.setMin('+m+')">:'+String(m).padStart(2,'0')+'</button>').join('');
+  wheelVals(kind){
+    if(kind==='h'){ const a=[]; for(let i=0;i<24;i++) a.push(i); return a; }
+    if(kind==='m'){
+      const a=[]; for(let i=0;i<60;i+=5) a.push(i);
+      if(a.indexOf(this.state.selMin)<0){ a.push(this.state.selMin); a.sort((x,y)=>x-y); }
+      return a;
     }
-    // Dauer nur bei gesetzter Uhrzeit (und nicht bei Routinen)
-    const fEnd = document.getElementById('fEnd');
-    fEnd.style.display = (s.editRoutineId || s.selHour===null) ? 'none' : '';
-    let durs = [0,15,30,45,60,90,120,180,240];
-    if(durs.indexOf(s.newDur) < 0){ durs.push(s.newDur); durs.sort((a,b)=>a-b); }
+    const a=[0,5,10,15,20,30,45,60,90,120,150,180,240,300,360];
+    if(a.indexOf(this.state.newDur)<0){ a.push(this.state.newDur); a.sort((x,y)=>x-y); }
+    return a;
+  },
+  buildWheels(){
     const durLabel = d => d===0 ? 'Ohne' : d<60 ? d+'m' : d%60===0 ? (d/60)+'h' : Math.floor(d/60)+'h '+(d%60)+'m';
-    document.getElementById('durChips').innerHTML =
-      durs.map(d => '<button class="tchip'+(s.newDur===d?' active':'')+'" onclick="App.setDur('+d+')">'+durLabel(d)+'</button>').join('');
+    const fill = (id, kind, fmt) => {
+      document.getElementById(id).innerHTML =
+        '<div class="pad"></div>' +
+        this.wheelVals(kind).map(v=>'<div class="witem" data-v="'+v+'">'+fmt(v)+'</div>').join('') +
+        '<div class="pad"></div>';
+    };
+    fill('wheelH','h', v=>String(v).padStart(2,'0'));
+    fill('wheelM','m', v=>String(v).padStart(2,'0'));
+    fill('wheelD','d', durLabel);
+  },
+  syncWheels(smooth){
+    const s = this.state;
+    document.getElementById('fEnd').style.display = s.editRoutineId ? 'none' : '';
+    document.getElementById('wheels').classList.toggle('disabled', s.selHour===null);
+    document.getElementById('noTimeBtn').classList.toggle('active', s.selHour===null);
+    const ITEM = 44;
+    const setPos = (id, kind, val) => {
+      const el = document.getElementById(id);
+      const idx = Math.max(0, this.wheelVals(kind).indexOf(val));
+      el._sync = true;
+      el.scrollTo({top: idx*ITEM, behavior: smooth?'smooth':'auto'});
+      const items = el.querySelectorAll('.witem');
+      items.forEach((it,j)=>it.classList.toggle('on', j===idx));
+      setTimeout(()=>{ el._sync = false; }, 250);
+    };
+    setPos('wheelH','h', s.selHour===null ? 12 : s.selHour);
+    setPos('wheelM','m', s.selMin);
+    setPos('wheelD','d', s.newDur);
+  },
+  toggleNoTime(){
+    if(this.state.selHour===null){ this.state.selHour = 12; this.state.selMin = 0; }
+    else this.state.selHour = null;
+    this.syncWheels(false);
   },
   setIcon(ic){
     this.state.newIcon = ic;
@@ -1153,6 +1184,31 @@ const App = {
     setupDrag(document.getElementById('list'));
     setupDrag(document.getElementById('dayList'));
     setupTimeDrag(document.getElementById('dayList'));
+    // Wheel-Scrollen: nach kurzem Stillstand einrasten und Wert übernehmen
+    const ITEM = 44;
+    [['wheelH','h'],['wheelM','m'],['wheelD','d']].forEach(([id,kind])=>{
+      const el = document.getElementById(id);
+      let t = null;
+      el.addEventListener('scroll', ()=>{
+        if(el._sync) return;
+        clearTimeout(t);
+        t = setTimeout(()=>{
+          const items = el.querySelectorAll('.witem');
+          if(!items.length) return;
+          const idx = Math.max(0, Math.min(items.length-1, Math.round(el.scrollTop/ITEM)));
+          const v = +items[idx].dataset.v;
+          if(kind==='h') this.state.selHour = v;
+          else if(kind==='m') this.state.selMin = v;
+          else this.state.newDur = v;
+          items.forEach((it,j)=>it.classList.toggle('on', j===idx));
+          if(Math.abs(el.scrollTop - idx*ITEM) > 2){
+            el._sync = true;
+            el.scrollTo({top: idx*ITEM, behavior:'smooth'});
+            setTimeout(()=>{ el._sync = false; }, 250);
+          }
+        }, 120);
+      }, {passive:true});
+    });
     // Beim Wechsel Handy-/Desktop-Breite das Layout neu aufbauen
     window.matchMedia('(min-width:1000px)').addEventListener('change', ()=>{
       this.setView(this.state.view);
