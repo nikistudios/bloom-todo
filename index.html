@@ -139,29 +139,67 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 .day-title{font-size:.85rem;font-weight:700;color:var(--soft);padding:2px 4px 0;}
 .day-sub{font-size:.72rem;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.5px;padding:4px 4px 0;}
 
-/* ---------- Timeline (Zeitleiste links) ---------- */
-.tl{display:flex;flex-direction:column;}
-.tl-row{display:flex;gap:10px;align-items:stretch;}
-.tl-times{
-  width:46px;flex:none;display:flex;flex-direction:column;justify-content:space-between;
-  align-items:flex-end;padding:16px 0 14px;font-variant-numeric:tabular-nums;
+/* ---------- Timeline (Zeitstrahl wie Tagesplaner) ---------- */
+.panel{
+  background:var(--card-solid);border:1px solid var(--line);border-radius:26px;
+  padding:12px 12px 16px;box-shadow:var(--shadow);
 }
-.tl-times .t1{font-size:.78rem;font-weight:800;}
-.tl-times .t2{font-size:.71rem;font-weight:600;color:var(--soft);}
-.tl-rail{width:24px;flex:none;position:relative;display:flex;justify-content:center;}
-.tl-rail::before{
+.tlx-row{display:flex;align-items:stretch;position:relative;}
+.tlx-time{
+  width:50px;flex:none;display:flex;flex-direction:column;justify-content:space-between;
+  align-items:flex-end;padding:16px 8px 16px 0;font-variant-numeric:tabular-nums;
+}
+.tlx-time .t1{font-size:.75rem;font-weight:800;color:var(--ink);}
+.tlx-time .t2{font-size:.7rem;font-weight:600;color:var(--soft);}
+.tlx-rail{width:54px;flex:none;position:relative;display:flex;flex-direction:column;align-items:center;padding:8px 0;}
+.tlx-rail::before{
   content:"";position:absolute;top:0;bottom:0;left:50%;margin-left:-1px;
-  border-left:2px dashed rgba(180,139,229,.35);
+  border-left:2px dashed rgba(180,139,229,.3);
 }
-.tl-pill{
-  position:relative;z-index:1;width:13px;border-radius:10px;flex:1;min-height:26px;margin:14px 0;
+.tlx-bubble{
+  position:relative;z-index:1;width:46px;min-height:46px;border-radius:23px;
   background:linear-gradient(160deg,var(--accent),var(--accent-2));
-  box-shadow:0 6px 14px -6px rgba(180,110,160,.7);
+  display:flex;align-items:center;justify-content:center;font-size:1.2rem;
+  box-shadow:0 8px 18px -8px rgba(180,110,160,.8);
 }
-.tl-pill.dot{flex:none;height:13px;min-height:0;margin:17px 0 0;}
-.tl-row.done .tl-pill{background:var(--done);box-shadow:none;opacity:.5;}
-.tl-card{flex:1;min-width:0;padding:5px 0;}
-.tl-card .task{box-shadow:0 8px 22px -16px rgba(150,110,180,.5);}
+.tlx-bubble.pill{flex:1;align-items:flex-start;padding-top:11px;}
+.tlx-row.done .tlx-bubble{background:#e9e4ee;box-shadow:none;filter:grayscale(.35);opacity:.8;}
+.tlx-body{flex:1;min-width:0;display:flex;align-items:flex-start;gap:8px;padding:12px 0 16px 12px;}
+.tlx-info{flex:1;min-width:0;cursor:pointer;}
+.tlx-sub{font-size:.72rem;font-weight:700;color:var(--soft);}
+.tlx-sub.now{color:var(--accent);}
+.tlx-title{font-size:1.02rem;font-weight:800;line-height:1.3;word-break:break-word;}
+.tlx-row.done .tlx-title{color:var(--done);text-decoration:line-through;}
+.tlx-note{font-size:.78rem;color:var(--soft);margin-top:2px;word-break:break-word;}
+.tlx-check{
+  width:27px;height:27px;border-radius:50%;flex:none;margin-top:6px;cursor:pointer;
+  border:2.5px solid var(--accent-soft);background:transparent;padding:0;
+  display:flex;align-items:center;justify-content:center;transition:.25s;
+}
+.tlx-check svg{width:14px;height:14px;stroke:#fff;stroke-width:3.5;fill:none;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:24;stroke-dashoffset:24;transition:stroke-dashoffset .3s ease .05s;}
+.tlx-row.done .tlx-check{background:linear-gradient(135deg,var(--accent),var(--accent-2));border-color:transparent;}
+.tlx-row.done .tlx-check svg{stroke-dashoffset:0;}
+.tlx-gap{display:flex;align-items:center;min-height:42px;}
+.tlx-gap .sp{width:50px;flex:none;}
+.tlx-gap .rail{width:54px;flex:none;align-self:stretch;position:relative;}
+.tlx-gap .rail::before{
+  content:"";position:absolute;top:0;bottom:0;left:50%;margin-left:-1px;
+  border-left:2px dashed rgba(180,139,229,.3);
+}
+.tlx-gap .msg{flex:1;padding-left:12px;font-size:.79rem;color:var(--soft);}
+.tlx-gap .msg b{color:var(--accent);}
+.tlx-now{display:flex;align-items:center;padding:2px 0;}
+.tlx-now .t{width:50px;flex:none;text-align:right;padding-right:8px;font-size:.72rem;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums;}
+.tlx-now .ln{flex:1;height:2px;border-radius:2px;background:var(--accent);opacity:.55;}
+
+/* Icon-Auswahl im Sheet */
+.icon-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:2px;}
+.icon-chip{
+  width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:#faf7fb;
+  font-size:1.25rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.icon-chip.active{background:rgba(229,139,169,.12);border-color:rgba(229,139,169,.5);}
 
 /* ---------- Liste ---------- */
 .list{display:flex;flex-direction:column;gap:11px;}
@@ -363,6 +401,8 @@ body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob
   <input type="text" id="taskInput" placeholder="Was steht an?" maxlength="140" autocomplete="off" />
   <div class="field-label">Notiz (optional)</div>
   <input type="text" id="noteInput" placeholder="z. B. Unterlagen mitnehmen" maxlength="200" autocomplete="off" />
+  <div class="field-label">Symbol</div>
+  <div class="icon-chips" id="iconChips"></div>
   <div class="field-label">Datum</div>
   <input type="date" id="dateInput" />
   <div class="field-row" style="margin-top:13px">
@@ -450,6 +490,7 @@ const Sound = (() => {
 /* ================= App (State + render) ================= */
 const KEY = 'bloom_v1';
 const THEMES = [ ['','Rosé'], ['theme-lavender','Lavendel'], ['theme-peach','Peach'], ['theme-mint','Mint'] ];
+const ICONS = ['🌸','⏰','📚','💼','🏋️','🛒','🍽','🌙'];
 const WD = ['So','Mo','Di','Mi','Do','Fr','Sa'];
 const WD_LONG = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
 const MONTHS = ['Jan','Feb','März','Apr','Mai','Juni','Juli','Aug','Sept','Okt','Nov','Dez'];
@@ -462,7 +503,8 @@ const App = {
     view: 'list',
     selDate: '',                   // ausgewählter Tag im Kalender
     editId: null,
-    newPrio: 0
+    newPrio: 0,
+    newIcon: '🌸'
   },
 
   /* ---------- Persistenz ---------- */
@@ -514,7 +556,7 @@ const App = {
   /* ---------- Sheet: Neu / Bearbeiten ---------- */
   openAdd(){
     this.state.editId = null;
-    this.fillSheet({ text:'', note:'', prio:0,
+    this.fillSheet({ text:'', note:'', prio:0, icon:'🌸',
       date: this.state.view==='cal' ? this.state.selDate : '', time:'', end:'' });
     document.getElementById('sheetTitle').textContent = 'Neues To-Do';
     document.getElementById('saveBtn').textContent = 'Hinzufügen';
@@ -526,7 +568,7 @@ const App = {
     const t = this.state.todos.find(x=>x.id===id);
     if(!t) return;
     this.state.editId = id;
-    this.fillSheet({ text:t.text, note:t.note||'', prio:t.prio||0, date:t.date||'', time:t.time||'', end:t.end||'' });
+    this.fillSheet({ text:t.text, note:t.note||'', prio:t.prio||0, icon:t.icon||'🌸', date:t.date||'', time:t.time||'', end:t.end||'' });
     document.getElementById('sheetTitle').textContent = 'To-Do bearbeiten';
     document.getElementById('saveBtn').textContent = 'Speichern';
     document.getElementById('sheetDelBtn').style.display = 'block';
@@ -539,6 +581,13 @@ const App = {
     document.getElementById('timeInput').value = v.time;
     document.getElementById('endInput').value = v.end;
     this.setPrio(v.prio);
+    this.setIcon(v.icon);
+  },
+  setIcon(ic){
+    this.state.newIcon = ic;
+    document.getElementById('iconChips').innerHTML = ICONS.map(i =>
+      '<button class="icon-chip'+(i===ic?' active':'')+'" onclick="App.setIcon(\''+i+'\')">'+i+'</button>'
+    ).join('');
   },
   setPrio(p){
     this.state.newPrio = p;
@@ -556,12 +605,13 @@ const App = {
     if(end && end <= time) end = '';            // Ende vor Start ergibt keinen Sinn
     if(this.state.editId){
       const t = this.state.todos.find(x=>x.id===this.state.editId);
-      if(t){ t.text=text; t.note=note; t.prio=this.state.newPrio; t.date=date; t.time=time; t.end=end; }
+      if(t){ t.text=text; t.note=note; t.prio=this.state.newPrio; t.icon=this.state.newIcon; t.date=date; t.time=time; t.end=end; }
       toast('Gespeichert ✔');
     } else {
       this.state.todos.unshift({
         id: String(Date.now()) + Math.floor(Math.random()*1000),
-        text, note, prio: this.state.newPrio, done:false, created: Date.now(), date, time, end
+        text, note, prio: this.state.newPrio, icon: this.state.newIcon,
+        done:false, created: Date.now(), date, time, end
       });
       Sound.add();
     }
@@ -803,16 +853,52 @@ const App = {
       html += '<div class="day-sub">Ohne Uhrzeit</div>' + untimed.map(t => this.taskHtml(t, false)).join('');
     }
     if(timed.length){
-      html += '<div class="tl">' + timed.map(t =>
-        '<div class="tl-row'+(t.done?' done':'')+'">'+
-          '<div class="tl-times">'+
+      const now = new Date();
+      const isToday = s.selDate === this.fmtDate(now);
+      const nowHM = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+      const nowRow = '<div class="tlx-now"><span class="t">'+nowHM+'</span><span class="ln"></span></div>';
+      let nowInserted = !isToday;
+      let rows = '';
+
+      for(let i=0;i<timed.length;i++){
+        const t = timed[i];
+        if(!nowInserted && nowHM < t.time){ rows += nowRow; nowInserted = true; }
+        // freies Fenster zwischen zwei Terminen anzeigen
+        if(i > 0){
+          const from = timed[i-1].end || timed[i-1].time;
+          const g = minutesBetween(from, t.time);
+          if(g >= 45){
+            rows += '<div class="tlx-gap"><div class="sp"></div><div class="rail"></div>'+
+              '<div class="msg">🕐 Ein Fenster: <b>'+fmtDur(g)+'</b> frei</div></div>';
+          }
+        }
+        let sub = t.time + (t.end ? ' – '+t.end : '');
+        let subCls = '';
+        if(isToday && !t.done && t.end && t.time <= nowHM && nowHM < t.end){
+          sub = 'Noch '+fmtDur(minutesBetween(nowHM, t.end));
+          subCls = ' now';
+        }
+        if(t.prio===1 && !t.done) sub += ' · 💗 Wichtig';
+        rows += '<div class="tlx-row'+(t.done?' done':'')+'" data-id="'+t.id+'">'+
+          '<div class="tlx-time">'+
             '<span class="t1">'+t.time+'</span>'+
             (t.end ? '<span class="t2">'+t.end+'</span>' : '')+
           '</div>'+
-          '<div class="tl-rail"><div class="tl-pill'+(t.end?'':' dot')+'"></div></div>'+
-          '<div class="tl-card">'+this.taskHtml(t, false)+'</div>'+
-        '</div>'
-      ).join('') + '</div>';
+          '<div class="tlx-rail"><div class="tlx-bubble'+(t.end?' pill':'')+'">'+(t.icon||'🌸')+'</div></div>'+
+          '<div class="tlx-body">'+
+            '<div class="tlx-info" onclick="App.openEdit(\''+t.id+'\')">'+
+              '<div class="tlx-sub'+subCls+'">'+sub+'</div>'+
+              '<div class="tlx-title">'+esc(t.text)+'</div>'+
+              (t.note ? '<div class="tlx-note">'+esc(t.note)+'</div>' : '')+
+            '</div>'+
+            '<button class="tlx-check" onclick="App.toggle(\''+t.id+'\')" aria-label="Abhaken">'+
+              '<svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6"/></svg>'+
+            '</button>'+
+          '</div>'+
+        '</div>';
+      }
+      if(!nowInserted) rows += nowRow;
+      html += '<div class="panel">'+rows+'</div>';
     }
     document.getElementById('dayList').innerHTML = html ||
       '<div class="empty"><span class="em">🗓</span>Nichts geplant an diesem Tag.<br>Tipp unten auf + zum Planen.</div>';
@@ -860,8 +946,19 @@ const App = {
     this.applyTheme();
     this.renderHeader();
     this.render();
+    // "Jetzt"-Linie und Restzeit-Anzeige minütlich aktualisieren
+    setInterval(()=>{ this.renderHeader(); if(this.state.view==='cal') this.render(); }, 60000);
   }
 };
+
+function minutesBetween(a, b){
+  const [h1,m1] = a.split(':').map(Number), [h2,m2] = b.split(':').map(Number);
+  return (h2*60+m2) - (h1*60+m1);
+}
+function fmtDur(min){
+  const h = Math.floor(min/60), m = min%60;
+  return (h ? h+'h' : '') + (h && m ? ' ' : '') + (m || !h ? m+'min' : '');
+}
 
 /* ================= Helfer ================= */
 function esc(s){
