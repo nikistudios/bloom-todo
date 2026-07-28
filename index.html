@@ -137,6 +137,31 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 .day.sel .wd,.day.sel .num{color:#fff;}
 .day.sel .dot{background:rgba(255,255,255,.85);}
 .day-title{font-size:.85rem;font-weight:700;color:var(--soft);padding:2px 4px 0;}
+.day-sub{font-size:.72rem;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.5px;padding:4px 4px 0;}
+
+/* ---------- Timeline (Zeitleiste links) ---------- */
+.tl{display:flex;flex-direction:column;}
+.tl-row{display:flex;gap:10px;align-items:stretch;}
+.tl-times{
+  width:46px;flex:none;display:flex;flex-direction:column;justify-content:space-between;
+  align-items:flex-end;padding:16px 0 14px;font-variant-numeric:tabular-nums;
+}
+.tl-times .t1{font-size:.78rem;font-weight:800;}
+.tl-times .t2{font-size:.71rem;font-weight:600;color:var(--soft);}
+.tl-rail{width:24px;flex:none;position:relative;display:flex;justify-content:center;}
+.tl-rail::before{
+  content:"";position:absolute;top:0;bottom:0;left:50%;margin-left:-1px;
+  border-left:2px dashed rgba(180,139,229,.35);
+}
+.tl-pill{
+  position:relative;z-index:1;width:13px;border-radius:10px;flex:1;min-height:26px;margin:14px 0;
+  background:linear-gradient(160deg,var(--accent),var(--accent-2));
+  box-shadow:0 6px 14px -6px rgba(180,110,160,.7);
+}
+.tl-pill.dot{flex:none;height:13px;min-height:0;margin:17px 0 0;}
+.tl-row.done .tl-pill{background:var(--done);box-shadow:none;opacity:.5;}
+.tl-card{flex:1;min-width:0;padding:5px 0;}
+.tl-card .task{box-shadow:0 8px 22px -16px rgba(150,110,180,.5);}
 
 /* ---------- Liste ---------- */
 .list{display:flex;flex-direction:column;gap:11px;}
@@ -338,14 +363,16 @@ body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob
   <input type="text" id="taskInput" placeholder="Was steht an?" maxlength="140" autocomplete="off" />
   <div class="field-label">Notiz (optional)</div>
   <input type="text" id="noteInput" placeholder="z. B. Unterlagen mitnehmen" maxlength="200" autocomplete="off" />
+  <div class="field-label">Datum</div>
+  <input type="date" id="dateInput" />
   <div class="field-row" style="margin-top:13px">
     <div>
-      <div class="field-label" style="margin-top:0">Datum</div>
-      <input type="date" id="dateInput" />
+      <div class="field-label" style="margin-top:0">Von</div>
+      <input type="time" id="timeInput" />
     </div>
     <div>
-      <div class="field-label" style="margin-top:0">Uhrzeit</div>
-      <input type="time" id="timeInput" />
+      <div class="field-label" style="margin-top:0">Bis</div>
+      <input type="time" id="endInput" />
     </div>
   </div>
   <div class="chips">
@@ -429,7 +456,7 @@ const MONTHS = ['Jan','Feb','März','Apr','Mai','Juni','Juli','Aug','Sept','Okt'
 
 const App = {
   state: {
-    todos: [],                     // {id, text, note, prio, done, created, date:'YYYY-MM-DD'|'', time:'HH:MM'|''}
+    todos: [],                     // {id, text, note, prio, done, created, date:'YYYY-MM-DD'|'', time:'HH:MM'|'', end:'HH:MM'|''}
     meta: { streak:0, lastDone:'', sound:true, theme:0, name:'Sophia' },
     filter: 'all',
     view: 'list',
@@ -488,7 +515,7 @@ const App = {
   openAdd(){
     this.state.editId = null;
     this.fillSheet({ text:'', note:'', prio:0,
-      date: this.state.view==='cal' ? this.state.selDate : '', time:'' });
+      date: this.state.view==='cal' ? this.state.selDate : '', time:'', end:'' });
     document.getElementById('sheetTitle').textContent = 'Neues To-Do';
     document.getElementById('saveBtn').textContent = 'Hinzufügen';
     document.getElementById('sheetDelBtn').style.display = 'none';
@@ -499,7 +526,7 @@ const App = {
     const t = this.state.todos.find(x=>x.id===id);
     if(!t) return;
     this.state.editId = id;
-    this.fillSheet({ text:t.text, note:t.note||'', prio:t.prio||0, date:t.date||'', time:t.time||'' });
+    this.fillSheet({ text:t.text, note:t.note||'', prio:t.prio||0, date:t.date||'', time:t.time||'', end:t.end||'' });
     document.getElementById('sheetTitle').textContent = 'To-Do bearbeiten';
     document.getElementById('saveBtn').textContent = 'Speichern';
     document.getElementById('sheetDelBtn').style.display = 'block';
@@ -510,6 +537,7 @@ const App = {
     document.getElementById('noteInput').value = v.note;
     document.getElementById('dateInput').value = v.date;
     document.getElementById('timeInput').value = v.time;
+    document.getElementById('endInput').value = v.end;
     this.setPrio(v.prio);
   },
   setPrio(p){
@@ -522,15 +550,18 @@ const App = {
     if(!text) return;
     const note = document.getElementById('noteInput').value.trim();
     const date = document.getElementById('dateInput').value || '';
-    const time = document.getElementById('timeInput').value || '';
+    let time = document.getElementById('timeInput').value || '';
+    let end = document.getElementById('endInput').value || '';
+    if(end && !time){ time = end; end = ''; }   // nur "Bis" gesetzt → als Startzeit werten
+    if(end && end <= time) end = '';            // Ende vor Start ergibt keinen Sinn
     if(this.state.editId){
       const t = this.state.todos.find(x=>x.id===this.state.editId);
-      if(t){ t.text=text; t.note=note; t.prio=this.state.newPrio; t.date=date; t.time=time; }
+      if(t){ t.text=text; t.note=note; t.prio=this.state.newPrio; t.date=date; t.time=time; t.end=end; }
       toast('Gespeichert ✔');
     } else {
       this.state.todos.unshift({
         id: String(Date.now()) + Math.floor(Math.random()*1000),
-        text, note, prio: this.state.newPrio, done:false, created: Date.now(), date, time
+        text, note, prio: this.state.newPrio, done:false, created: Date.now(), date, time, end
       });
       Sound.add();
     }
@@ -669,10 +700,9 @@ const App = {
     if(showWhen && (t.date || t.time)){
       const parts = [];
       if(t.date) parts.push(this.niceDate(t.date));
-      if(t.time) parts.push(t.time);
+      if(t.time) parts.push(t.time + (t.end ? '–'+t.end : ''));
       chips.push('<span class="mchip when">🕐 '+parts.join(' · ')+'</span>');
     }
-    if(!showWhen && t.time) chips.push('<span class="mchip when">🕐 '+t.time+'</span>');
     return '<div class="task'+(t.done?' done':'')+'" data-id="'+t.id+'">'+
       '<button class="check" onclick="App.toggle(\''+t.id+'\')" aria-label="Abhaken">'+
         '<svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6"/></svg>'+
@@ -761,14 +791,31 @@ const App = {
     document.getElementById('dayTitle').textContent =
       WD_LONG[sel.getDay()]+', '+sel.getDate()+'. '+MONTHS[sel.getMonth()] + (s.selDate===today ? ' · Heute' : '');
 
-    const dayTasks = s.todos
-      .filter(t => t.date === s.selDate)
+    const dayTasks = s.todos.filter(t => t.date === s.selDate);
+    const untimed = dayTasks.filter(t => !t.time)
+      .sort((a,b) => (a.done - b.done) || ((b.prio||0)-(a.prio||0)) || (b.created - a.created));
+    const timed = dayTasks.filter(t => t.time)
       .slice()
-      .sort((a,b) => (a.done - b.done) || ((a.time||'99:99') > (b.time||'99:99') ? 1 : -1) || ((b.prio||0)-(a.prio||0)));
+      .sort((a,b) => a.time < b.time ? -1 : a.time > b.time ? 1 : ((b.prio||0)-(a.prio||0)));
 
-    document.getElementById('dayList').innerHTML = dayTasks.length
-      ? dayTasks.map(t => this.taskHtml(t, false)).join('')
-      : '<div class="empty"><span class="em">🗓</span>Nichts geplant an diesem Tag.<br>Tipp unten auf + zum Planen.</div>';
+    let html = '';
+    if(untimed.length){
+      html += '<div class="day-sub">Ohne Uhrzeit</div>' + untimed.map(t => this.taskHtml(t, false)).join('');
+    }
+    if(timed.length){
+      html += '<div class="tl">' + timed.map(t =>
+        '<div class="tl-row'+(t.done?' done':'')+'">'+
+          '<div class="tl-times">'+
+            '<span class="t1">'+t.time+'</span>'+
+            (t.end ? '<span class="t2">'+t.end+'</span>' : '')+
+          '</div>'+
+          '<div class="tl-rail"><div class="tl-pill'+(t.end?'':' dot')+'"></div></div>'+
+          '<div class="tl-card">'+this.taskHtml(t, false)+'</div>'+
+        '</div>'
+      ).join('') + '</div>';
+    }
+    document.getElementById('dayList').innerHTML = html ||
+      '<div class="empty"><span class="em">🗓</span>Nichts geplant an diesem Tag.<br>Tipp unten auf + zum Planen.</div>';
   },
 
   renderHeader(){
