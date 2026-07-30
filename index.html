@@ -557,7 +557,7 @@ body.theme-dark{
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v17</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v18</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -596,7 +596,13 @@ const Sound = (() => {
 
 /* ================= App (State + render) ================= */
 const KEY = 'bloom_v1';
-const THEMES = [ ['','Rosé'], ['theme-lavender','Lavendel'], ['theme-peach','Peach'], ['theme-mint','Mint'], ['theme-dark','Dark 🌑'] ];
+const THEMES = [
+  ['','Rosé','#fbe9ef'],
+  ['theme-lavender','Lavendel','#efe6fb'],
+  ['theme-peach','Peach','#fdeae0'],
+  ['theme-mint','Mint','#e0f5ec'],
+  ['theme-dark','Dark 🌑','#0b0c10']
+];
 const ICONS = ['🌸','⏰','📚','💼','🏋️','🛒','🍽','🌙'];
 const DEFAULT_ROUTINES = [
   { id:'r_wake',  text:'Aufwachen!',     icon:'⏰', time:'08:00' },
@@ -950,9 +956,12 @@ const App = {
   applyTheme(){
     // nur eigene Theme-Klassen anfassen, sonst nichts am <body> ändern
     THEMES.forEach(([cls]) => { if(cls) document.body.classList.remove(cls); });
-    const [cls, name] = THEMES[this.state.meta.theme] || THEMES[0];
+    const [cls, name, barColor] = THEMES[this.state.meta.theme] || THEMES[0];
     if(cls) document.body.classList.add(cls);
     document.getElementById('themeHint').textContent = name;
+    // iPhone-Statusleiste/Browserleiste in Theme-Farbe färben
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if(meta) meta.setAttribute('content', barColor);
   },
   toggleSound(){
     this.state.meta.sound = !this.state.meta.sound;
