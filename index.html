@@ -31,7 +31,7 @@
   --bubble-done:#e9e4ee;
 }
 *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
-html{height:100%;}
+html{height:100%;background:var(--bg1);}
 body{
   min-height:100%;
   color:var(--ink);
@@ -378,10 +378,10 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
 /* ---------- Farbwelten ---------- */
-body.theme-lavender{--bg1:#efe6fb;--bg2:#e9e6fb;--bg3:#f3e6fb;--blob1:#d4c4f5;--blob2:#f0c0e2;--accent:#a78be5;--accent-2:#e58bc9;--accent-soft:#e6d9f7;}
-body.theme-peach{--bg1:#fdeae0;--bg2:#fbe6ec;--bg3:#fdf0e6;--blob1:#f8ceb4;--blob2:#f6bcd0;--accent:#f0a07a;--accent-2:#e58ba9;--accent-soft:#fadfce;}
-body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob2:#bcdcf0;--accent:#6ec9a8;--accent-2:#8bc9e5;--accent-soft:#cdeee0;}
-body.theme-dark{
+body.theme-lavender,html.theme-lavender{--bg1:#efe6fb;--bg2:#e9e6fb;--bg3:#f3e6fb;--blob1:#d4c4f5;--blob2:#f0c0e2;--accent:#a78be5;--accent-2:#e58bc9;--accent-soft:#e6d9f7;}
+body.theme-peach,html.theme-peach{--bg1:#fdeae0;--bg2:#fbe6ec;--bg3:#fdf0e6;--blob1:#f8ceb4;--blob2:#f6bcd0;--accent:#f0a07a;--accent-2:#e58ba9;--accent-soft:#fadfce;}
+body.theme-mint,html.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob2:#bcdcf0;--accent:#6ec9a8;--accent-2:#8bc9e5;--accent-soft:#cdeee0;}
+body.theme-dark,html.theme-dark{
   --bg1:#0b0c10;--bg2:#12141f;--bg3:#0d1117;
   --blob1:rgba(110,168,255,.22);--blob2:rgba(155,123,255,.22);
   --card:rgba(30,33,46,.6);--card-solid:#171a24;
@@ -567,7 +567,7 @@ body.theme-dark{
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v19</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v20</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -964,10 +964,12 @@ const App = {
     this.save(); this.applyTheme(); Sound.add();
   },
   applyTheme(){
-    // nur eigene Theme-Klassen anfassen, sonst nichts am <body> ändern
-    THEMES.forEach(([cls]) => { if(cls) document.body.classList.remove(cls); });
+    // nur eigene Theme-Klassen anfassen, sonst nichts an <body>/<html> ändern
+    THEMES.forEach(([cls]) => {
+      if(cls){ document.body.classList.remove(cls); document.documentElement.classList.remove(cls); }
+    });
     const [cls, name, barColor] = THEMES[this.state.meta.theme] || THEMES[0];
-    if(cls) document.body.classList.add(cls);
+    if(cls){ document.body.classList.add(cls); document.documentElement.classList.add(cls); }
     document.getElementById('themeHint').textContent = name;
     // iPhone-Statusleiste/Browserleiste in Theme-Farbe färben
     const meta = document.querySelector('meta[name="theme-color"]');
