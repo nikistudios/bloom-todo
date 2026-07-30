@@ -2,11 +2,11 @@
 <html lang="de">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="robots" content="noindex,nofollow" />
 <meta name="theme-color" content="#fbe9ef" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Bloom" />
 <title>Bloom · To-Do</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>" />
@@ -56,8 +56,16 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 
 #app{
   position:relative; z-index:1; width:100%; max-width:430px;
-  padding:max(20px, env(safe-area-inset-top)) 18px calc(110px + env(safe-area-inset-bottom));
+  padding:max(20px, calc(env(safe-area-inset-top, 0px) + 12px)) 18px calc(110px + env(safe-area-inset-bottom));
   display:flex; flex-direction:column; gap:16px;
+}
+/* Bei heller Farbwelt: dezente Abdunklung hinter der (weißen) iOS-Uhr,
+   damit sie lesbar bleibt — nur im installierten Vollbild-Modus aktiv */
+.topbar{
+  display:none;position:fixed;top:0;left:0;right:0;z-index:40;pointer-events:none;
+  height:env(safe-area-inset-top, 0px);
+  background:rgba(74,61,82,.3);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
 }
 
 /* ---------- Header ---------- */
@@ -420,6 +428,8 @@ body.theme-dark{
 </head>
 <body>
 
+<div class="topbar" id="topbar"></div>
+
 <div id="app">
   <div class="header">
     <div>
@@ -557,7 +567,7 @@ body.theme-dark{
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v18</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v19</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -962,6 +972,9 @@ const App = {
     // iPhone-Statusleiste/Browserleiste in Theme-Farbe färben
     const meta = document.querySelector('meta[name="theme-color"]');
     if(meta) meta.setAttribute('content', barColor);
+    // Im installierten Vollbild-Modus mit heller Farbwelt: Uhr lesbar halten
+    const topbar = document.getElementById('topbar');
+    if(topbar) topbar.style.display = (window.navigator.standalone && cls !== 'theme-dark') ? 'block' : 'none';
   },
   toggleSound(){
     this.state.meta.sound = !this.state.meta.sound;
