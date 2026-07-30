@@ -25,6 +25,10 @@
   --line:rgba(180,139,229,.18);
   --shadow:0 16px 44px -18px rgba(150,110,180,.5);
   --done:#b7a9c9;
+  --field:#faf7fb;
+  --surface:rgba(255,255,255,.45);
+  --card-border:rgba(255,255,255,.6);
+  --bubble-done:#e9e4ee;
 }
 *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
 html{height:100%;}
@@ -63,7 +67,7 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 .header .date b{background:linear-gradient(120deg,var(--accent),var(--accent-2)); -webkit-background-clip:text; background-clip:text; color:transparent;}
 .header .quote{font-size:.82rem; color:var(--soft); margin-top:5px;}
 .menu-btn{
-  width:42px;height:42px;border-radius:14px;border:1px solid rgba(255,255,255,.6);
+  width:42px;height:42px;border-radius:14px;border:1px solid var(--card-border);
   background:var(--card);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   color:var(--ink);font-size:1.25rem;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;
   box-shadow:0 8px 22px -12px rgba(150,110,180,.5);
@@ -72,7 +76,7 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 
 /* ---------- Ansicht-Umschalter ---------- */
 .segmented{
-  display:flex;gap:6px;background:rgba(255,255,255,.45);border-radius:17px;padding:5px;
+  display:flex;gap:6px;background:var(--surface);border-radius:17px;padding:5px;
 }
 .seg{
   flex:1;border:none;background:transparent;color:var(--soft);
@@ -86,7 +90,7 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 /* ---------- Progress-Karte ---------- */
 .progress-card{
   background:var(--card);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
-  border:1px solid rgba(255,255,255,.6); border-radius:24px; padding:20px;
+  border:1px solid var(--card-border); border-radius:24px; padding:20px;
   display:flex; align-items:center; gap:18px; box-shadow:var(--shadow);
 }
 .ring{position:relative;width:80px;height:80px;flex:none;}
@@ -103,7 +107,7 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 /* ---------- Tabs ---------- */
 .tabs{display:flex;gap:8px;}
 .tab{
-  flex:1;border:none;background:rgba(255,255,255,.45);color:var(--soft);
+  flex:1;border:none;background:var(--surface);color:var(--soft);
   font-family:inherit;font-size:.85rem;font-weight:700;padding:10px 0;border-radius:15px;cursor:pointer;transition:.2s;
 }
 .tab.active{
@@ -115,14 +119,14 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 .cal-head{display:flex;align-items:center;justify-content:space-between;padding:0 2px;}
 .cal-head .label{font-size:1rem;font-weight:800;}
 .cal-nav{
-  width:38px;height:38px;border-radius:13px;border:1px solid rgba(255,255,255,.6);
+  width:38px;height:38px;border-radius:13px;border:1px solid var(--card-border);
   background:var(--card);color:var(--ink);font-size:1.05rem;font-weight:700;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
 }
 .cal-nav:active{transform:scale(.9);}
 .week{display:flex;gap:5px;}
 .day{
-  flex:1;border:none;background:rgba(255,255,255,.45);border-radius:14px;padding:9px 0 7px;
+  flex:1;border:none;background:var(--surface);border-radius:14px;padding:9px 0 7px;
   display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;font-family:inherit;color:var(--ink);
 }
 .day .wd{font-size:.62rem;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.4px;}
@@ -150,8 +154,8 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 }
 .tlx-row.dragging{
   opacity:.92;transform:scale(1.015);z-index:15;
-  background:rgba(255,255,255,.95);border-radius:18px;
-  box-shadow:0 18px 40px -14px rgba(150,110,180,.75);
+  background:var(--card-solid);border-radius:18px;
+  box-shadow:0 18px 40px -14px rgba(90,70,120,.75);
 }
 .tlx-time{
   width:50px;flex:none;display:flex;flex-direction:column;justify-content:space-between;
@@ -171,7 +175,7 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
   box-shadow:0 8px 18px -8px rgba(180,110,160,.8);
 }
 .tlx-bubble.pill{flex:1;align-items:flex-start;padding-top:11px;}
-.tlx-row.done .tlx-bubble{background:#e9e4ee;box-shadow:none;filter:grayscale(.35);opacity:.8;}
+.tlx-row.done .tlx-bubble{background:var(--bubble-done);box-shadow:none;filter:grayscale(.35);opacity:.8;}
 .tlx-body{flex:1;min-width:0;display:flex;align-items:flex-start;gap:8px;padding:12px 0 16px 12px;}
 .tlx-info{flex:1;min-width:0;cursor:pointer;}
 .tlx-sub{font-size:.72rem;font-weight:700;color:var(--soft);}
@@ -211,7 +215,7 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 }
 .wheel{
   position:relative;height:120px;overflow-y:auto;border-radius:15px;
-  background:#faf7fb;border:1px solid var(--line);
+  background:var(--field);border:1px solid var(--line);
   scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;
 }
 .wheel::-webkit-scrollbar{display:none;}
@@ -226,7 +230,7 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 /* Icon-Auswahl im Sheet */
 .icon-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:2px;}
 .icon-chip{
-  width:38px;height:38px;border-radius:12px;border:1px solid var(--line);background:#faf7fb;
+  width:38px;height:38px;border-radius:12px;border:1px solid var(--line);background:var(--field);
   font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
 }
 .icon-chip.active{background:rgba(229,139,169,.12);border-color:rgba(229,139,169,.5);}
@@ -262,11 +266,11 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 .task .mchip.prio{color:var(--accent);background:rgba(229,139,169,.1);}
 .task .mchip.when{color:var(--accent-2);background:rgba(180,139,229,.12);}
 .task .del{
-  border:none;background:transparent;color:#d9cbe1;font-size:1.05rem;cursor:pointer;padding:6px;border-radius:10px;flex:none;
+  border:none;background:transparent;color:var(--faint);font-size:1.05rem;cursor:pointer;padding:6px;border-radius:10px;flex:none;
 }
 .task .del:active{color:var(--accent);}
 .task .drag{
-  border:none;background:transparent;color:#d9cbe1;font-size:1.15rem;cursor:grab;padding:6px 4px;flex:none;
+  border:none;background:transparent;color:var(--faint);font-size:1.15rem;cursor:grab;padding:6px 4px;flex:none;
   touch-action:none;user-select:none;-webkit-user-select:none;
 }
 .task.dragging{
@@ -316,7 +320,7 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 }
 .sheet-del:active{background:rgba(229,139,169,.25);}
 .sheet input[type=text],.sheet input[type=date],.sheet input[type=time]{
-  width:100%;background:#faf7fb;border:1px solid var(--line);border-radius:15px;
+  width:100%;background:var(--field);border:1px solid var(--line);border-radius:15px;
   color:var(--ink);font-family:inherit;font-size:1rem;padding:13px 15px;outline:none;
   -webkit-appearance:none;appearance:none;min-height:48px;
 }
@@ -327,7 +331,7 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 .field-row>div{flex:1;min-width:0;}
 .chips{display:flex;gap:8px;margin:12px 0 14px;}
 .chip{
-  flex:1;border:1px solid var(--line);background:#faf7fb;color:var(--soft);
+  flex:1;border:1px solid var(--line);background:var(--field);color:var(--soft);
   font-family:inherit;font-size:.85rem;font-weight:700;padding:11px 0;border-radius:14px;cursor:pointer;
 }
 .chip.active{background:rgba(229,139,169,.12);border-color:rgba(229,139,169,.5);color:var(--accent);}
@@ -369,6 +373,23 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 body.theme-lavender{--bg1:#efe6fb;--bg2:#e9e6fb;--bg3:#f3e6fb;--blob1:#d4c4f5;--blob2:#f0c0e2;--accent:#a78be5;--accent-2:#e58bc9;--accent-soft:#e6d9f7;}
 body.theme-peach{--bg1:#fdeae0;--bg2:#fbe6ec;--bg3:#fdf0e6;--blob1:#f8ceb4;--blob2:#f6bcd0;--accent:#f0a07a;--accent-2:#e58ba9;--accent-soft:#fadfce;}
 body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob2:#bcdcf0;--accent:#6ec9a8;--accent-2:#8bc9e5;--accent-soft:#cdeee0;}
+body.theme-dark{
+  --bg1:#0b0c10;--bg2:#12141f;--bg3:#0d1117;
+  --blob1:rgba(110,168,255,.22);--blob2:rgba(155,123,255,.22);
+  --card:rgba(30,33,46,.6);--card-solid:#171a24;
+  --ink:#eef0f6;--soft:#9aa0b3;--faint:#565d72;
+  --accent:#6ea8ff;--accent-2:#9b7bff;--accent-soft:rgba(110,168,255,.4);
+  --line:rgba(255,255,255,.08);
+  --shadow:0 16px 44px -18px rgba(0,0,0,.75);
+  --done:#5d647a;
+  --field:#20242f;
+  --surface:rgba(255,255,255,.06);
+  --card-border:rgba(255,255,255,.09);
+  --bubble-done:#262b39;
+}
+/* Fortschrittsring folgt der Akzentfarbe des Themes */
+#grad stop:first-child{stop-color:var(--accent);}
+#grad stop:last-child{stop-color:var(--accent-2);}
 
 /* ---------- Desktop / Laptop: zwei Spalten ---------- */
 @media (min-width:1000px){
@@ -536,7 +557,7 @@ body.theme-mint{--bg1:#e0f5ec;--bg2:#e6f5f0;--bg3:#e0f0f5;--blob1:#bce8d4;--blob
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v16</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v17</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -575,7 +596,7 @@ const Sound = (() => {
 
 /* ================= App (State + render) ================= */
 const KEY = 'bloom_v1';
-const THEMES = [ ['','Rosé'], ['theme-lavender','Lavendel'], ['theme-peach','Peach'], ['theme-mint','Mint'] ];
+const THEMES = [ ['','Rosé'], ['theme-lavender','Lavendel'], ['theme-peach','Peach'], ['theme-mint','Mint'], ['theme-dark','Dark 🌑'] ];
 const ICONS = ['🌸','⏰','📚','💼','🏋️','🛒','🍽','🌙'];
 const DEFAULT_ROUTINES = [
   { id:'r_wake',  text:'Aufwachen!',     icon:'⏰', time:'08:00' },
@@ -898,6 +919,8 @@ const App = {
 
   /* ---------- Sheets ---------- */
   openSheet(id){
+    // erst alle anderen Sheets schließen, sonst liegt z. B. das Menü über dem Namens-Fenster
+    document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'));
     document.getElementById('overlay').classList.add('open');
     document.getElementById(id).classList.add('open');
   },
