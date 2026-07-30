@@ -261,6 +261,12 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
   stroke-dasharray:24;stroke-dashoffset:24;transition:stroke-dashoffset .3s ease .05s;}
 .task.done .check{background:linear-gradient(135deg,var(--accent),var(--accent-2));border-color:transparent;}
 .task.done .check svg{stroke-dashoffset:0;}
+.task .ticon{
+  width:36px;height:36px;border-radius:13px;flex:none;margin-top:0;
+  background:var(--field);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+}
+.task.done .ticon{opacity:.5;filter:grayscale(.4);}
 .task .body{flex:1;min-width:0;cursor:pointer;}
 .task .label{font-size:.96rem;font-weight:600;line-height:1.35;word-break:break-word;}
 .task.done .label{color:var(--done);text-decoration:line-through;text-decoration-color:rgba(183,169,201,.6);}
@@ -567,7 +573,7 @@ body.theme-dark,html.theme-dark{
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v20</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v21</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1029,6 +1035,7 @@ const App = {
       '<button class="check" onclick="App.toggle(\''+t.id+'\')" aria-label="Abhaken">'+
         '<svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6"/></svg>'+
       '</button>'+
+      '<span class="ticon">'+(t.icon||'🌸')+'</span>'+
       '<div class="body" onclick="App.openEdit(\''+t.id+'\')">'+
         '<div class="label">'+esc(t.text)+'</div>'+
         (t.note ? '<div class="note">'+esc(t.note)+'</div>' : '')+
