@@ -125,6 +125,11 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 .xp-bar i{display:block;height:100%;border-radius:4px;width:0;
   background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .5s cubic-bezier(.4,1,.4,1);}
 .xp-text{display:block;font-size:.68rem;font-weight:700;color:var(--faint);margin-top:4px;}
+.mascot{width:72px;height:72px;flex:none;align-self:center;}
+.mascot svg{width:100%;height:100%;animation:floaty 3.2s ease-in-out infinite;}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.mascot.t7 svg{filter:drop-shadow(0 0 9px var(--accent-2));animation-duration:2.2s;}
+@media (max-width:360px){.mascot{display:none;}}
 
 /* ---------- Tabs ---------- */
 .tabs{display:flex;gap:8px;}
@@ -487,6 +492,7 @@ body.theme-dark,html.theme-dark{
         <div class="xp-bar"><i id="xpFill"></i></div>
         <span class="xp-text" id="xpText"></span>
       </div>
+      <div class="mascot" id="mascot"></div>
     </div>
 
     <div class="tabs" id="tabs"></div>
@@ -589,7 +595,7 @@ body.theme-dark,html.theme-dark{
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v24</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v25</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -992,6 +998,14 @@ const App = {
     chip.className = 'level-chip' + (info.lvl>=7 ? ' t7' : info.lvl>=5 ? ' t5' : info.lvl>=3 ? ' t3' : '');
     document.getElementById('xpFill').style.width = Math.round(info.rem/info.need*100)+'%';
     document.getElementById('xpText').textContent = info.rem+' / '+info.need+' XP bis Level '+(info.lvl+1);
+    const mascot = document.getElementById('mascot');
+    mascot.className = 'mascot' + (info.lvl>=7 ? ' t7' : '');
+    mascot.innerHTML = this.mascotSvg(Math.min(info.lvl, 7));
+  },
+  /* Maskottchen: Schleimi (hell) bzw. Drache (dark), wird pro Level ausgebauter */
+  mascotSvg(lvl){
+    if(this.isDark()) return dragonSvg(lvl);
+    return slimeSvg(lvl);
   },
 
   /* ---------- Sheets ---------- */
@@ -1506,6 +1520,81 @@ function toast(msg){
   el.textContent = msg; el.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=>el.classList.remove('show'), 2500);
+}
+
+/* ---------- Maskottchen-Grafiken ---------- */
+function slimeSvg(lvl){
+  let s = '<svg viewBox="0 0 100 100"><defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1">';
+  s += lvl >= 5
+    ? '<stop offset="0" stop-color="#ff9ec4"/><stop offset="1" stop-color="#b48be5"/>'
+    : '<stop offset="0" stop-color="#ffc9da"/><stop offset="1" stop-color="#ef92b4"/>';
+  s += '</linearGradient></defs>';
+  if(lvl >= 7) s += '<ellipse cx="50" cy="56" rx="45" ry="41" fill="#b48be5" opacity=".18"/>';
+  // Körper
+  s += '<path d="M50 18 C74 18 86 40 84 60 C82 78 68 86 50 86 C32 86 18 78 16 60 C14 40 26 18 50 18 Z" fill="url(#mg)"/>';
+  s += '<ellipse cx="38" cy="34" rx="10" ry="6" fill="#fff" opacity=".35" transform="rotate(-20 38 34)"/>';
+  // Gesicht
+  s += '<circle cx="38" cy="52" r="5" fill="#3c3346"/><circle cx="62" cy="52" r="5" fill="#3c3346"/>';
+  s += '<circle cx="39.6" cy="50.4" r="1.8" fill="#fff"/><circle cx="63.6" cy="50.4" r="1.8" fill="#fff"/>';
+  s += '<path d="M44 63 Q50 '+(lvl>=2?'70':'67')+' 56 63" stroke="#3c3346" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
+  if(lvl >= 2){
+    s += '<ellipse cx="29" cy="61" rx="4.5" ry="2.8" fill="#ff8fae" opacity=".6"/>';
+    s += '<ellipse cx="71" cy="61" rx="4.5" ry="2.8" fill="#ff8fae" opacity=".6"/>';
+  }
+  if(lvl >= 3){
+    const star = (x,y,r) => '<path d="M'+x+' '+(y-r)+' L'+(x+r*.3)+' '+(y-r*.3)+' L'+(x+r)+' '+y+' L'+(x+r*.3)+' '+(y+r*.3)+' L'+x+' '+(y+r)+' L'+(x-r*.3)+' '+(y+r*.3)+' L'+(x-r)+' '+y+' L'+(x-r*.3)+' '+(y-r*.3)+' Z" fill="#ffd76e"/>';
+    s += star(14,26,5) + star(88,20,4) + star(90,66,3.5);
+  }
+  if(lvl >= 4 && lvl < 6){
+    s += '<path d="M50 17 L37 9 L40 22 Z" fill="#e5679b"/><path d="M50 17 L63 9 L60 22 Z" fill="#e5679b"/><circle cx="50" cy="16" r="3.4" fill="#c94f84"/>';
+  }
+  if(lvl >= 6){
+    s += '<path d="M36 18 L39 5 L50 13 L61 5 L64 18 Z" fill="#ffd76e"/>';
+    s += '<circle cx="39" cy="5" r="2" fill="#ffb84d"/><circle cx="61" cy="5" r="2" fill="#ffb84d"/><circle cx="50" cy="12" r="2" fill="#ffb84d"/>';
+  }
+  return s + '</svg>';
+}
+function dragonSvg(lvl){
+  let s = '<svg viewBox="0 0 100 100"><defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1">';
+  s += '<stop offset="0" stop-color="#7fb2ff"/><stop offset="1" stop-color="#4a5fd0"/>';
+  s += '</linearGradient></defs>';
+  if(lvl >= 7) s += '<ellipse cx="50" cy="58" rx="45" ry="40" fill="#9b7bff" opacity=".2"/>';
+  // Flügel
+  if(lvl >= 3){
+    const big = lvl >= 6;
+    s += '<path d="M24 54 Q'+(big?'0 38 8 12':'6 42 12 24')+' Q28 32 31 46 Z" fill="#3d4db8"/>';
+    s += '<path d="M76 54 Q'+(big?'100 38 92 12':'94 42 88 24')+' Q72 32 69 46 Z" fill="#3d4db8"/>';
+  }
+  // Rückenstacheln
+  if(lvl >= 4){
+    s += '<path d="M36 32 L40 21 L44 31 Z" fill="#ffd76e"/><path d="M46 29 L50 17 L54 29 Z" fill="#ffd76e"/><path d="M56 31 L60 21 L64 32 Z" fill="#ffd76e"/>';
+  }
+  // Hörner
+  s += lvl >= 2
+    ? '<path d="M38 32 L30 16 L45 27 Z" fill="#e8ecf5"/><path d="M62 32 L70 16 L55 27 Z" fill="#e8ecf5"/>'
+    : '<path d="M40 33 L36 23 L45 29 Z" fill="#e8ecf5"/><path d="M60 33 L64 23 L55 29 Z" fill="#e8ecf5"/>';
+  // Körper + Bauch
+  s += '<circle cx="50" cy="58" r="30" fill="url(#mg)"/>';
+  s += '<ellipse cx="50" cy="69" rx="16" ry="11" fill="#cfe0ff" opacity=".9"/>';
+  // Augen
+  s += '<circle cx="40" cy="52" r="6" fill="#fff"/><circle cx="60" cy="52" r="6" fill="#fff"/>';
+  if(lvl >= 6){
+    s += '<circle cx="40" cy="52" r="4.6" fill="#9b7bff" opacity=".45"/><circle cx="60" cy="52" r="4.6" fill="#9b7bff" opacity=".45"/>';
+  }
+  s += '<circle cx="41" cy="52.5" r="2.7" fill="#232742"/><circle cx="59" cy="52.5" r="2.7" fill="#232742"/>';
+  // Mund + Zahn
+  s += '<path d="M43 62 Q50 66.5 57 62" stroke="#232742" stroke-width="2.4" fill="none" stroke-linecap="round"/>';
+  s += '<path d="M54 63.5 L56 68 L58 63" fill="#fff"/>';
+  // Feueratem
+  if(lvl >= 5){
+    s += '<path d="M76 66 Q86 74 78 86 Q68 76 76 66 Z" fill="#ff9b3d"/>';
+    s += '<path d="M76 70 Q82 75 77 82 Q71 76 76 70 Z" fill="#ffd76e"/>';
+  }
+  // Blitz
+  if(lvl >= 7){
+    s += '<path d="M20 6 L12 20 L18 20 L10 34 L26 16 L19 16 Z" fill="#ffd76e"/>';
+  }
+  return s + '</svg>';
 }
 
 /* Konfetti-Burst an einem Element */
