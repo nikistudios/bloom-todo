@@ -125,7 +125,10 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 .xp-bar i{display:block;height:100%;border-radius:4px;width:0;
   background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .5s cubic-bezier(.4,1,.4,1);}
 .xp-text{display:block;font-size:.68rem;font-weight:700;color:var(--faint);margin-top:4px;}
-.mascot{width:72px;height:72px;flex:none;align-self:center;}
+.mascot{width:86px;height:86px;flex:none;align-self:center;cursor:pointer;}
+.mascot-big{width:250px;height:250px;margin:4px auto 2px;}
+.mascot-big svg{width:100%;height:100%;animation:floaty 3s ease-in-out infinite;}
+.mascot-caption{text-align:center;font-size:.85rem;color:var(--soft);font-weight:700;padding-bottom:8px;}
 .mascot svg{width:100%;height:100%;animation:floaty 3.2s ease-in-out infinite;}
 @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 .mascot.t7 svg{filter:drop-shadow(0 0 9px var(--accent-2));animation-duration:2.2s;}
@@ -492,7 +495,7 @@ body.theme-dark,html.theme-dark{
         <div class="xp-bar"><i id="xpFill"></i></div>
         <span class="xp-text" id="xpText"></span>
       </div>
-      <div class="mascot" id="mascot"></div>
+      <div class="mascot" id="mascot" onclick="App.showMascot()"></div>
     </div>
 
     <div class="tabs" id="tabs"></div>
@@ -564,6 +567,13 @@ body.theme-dark,html.theme-dark{
   <button class="btn-primary" id="saveBtn" onclick="App.saveTask()">Hinzufügen</button>
 </div>
 
+<div class="sheet" id="mascotSheet">
+  <div class="grab"></div>
+  <h2 id="mascotTitle" style="text-align:center">Dein Begleiter</h2>
+  <div class="mascot-big" id="mascotBig"></div>
+  <div class="mascot-caption" id="mascotCaption"></div>
+</div>
+
 <div class="sheet" id="nameSheet">
   <div class="grab"></div>
   <h2>Wie heißt du?</h2>
@@ -595,7 +605,7 @@ body.theme-dark,html.theme-dark{
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v28</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v29</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -985,7 +995,10 @@ const App = {
     const after = this.levelInfo(this.state.meta.xp).lvl;
     this.save();
     if(delta > 0 && after > before){
-      setTimeout(()=>{ Sound.allDone(); rain(); toast('Level Up! Jetzt Level '+after+' 🎉'); }, 500);
+      setTimeout(()=>{
+        Sound.allDone(); rain(); toast('Level Up! Jetzt Level '+after+' 🎉');
+        this.showMascot();
+      }, 500);
     }
   },
   renderLevel(){
@@ -1008,6 +1021,14 @@ const App = {
   mascotSvg(lvl){
     if(this.isDark()) return dragonSvg(lvl);
     return slimeSvg(lvl);
+  },
+  showMascot(){
+    const info = this.levelInfo(this.state.meta.xp);
+    document.getElementById('mascotTitle').textContent = 'Level '+info.lvl;
+    document.getElementById('mascotBig').innerHTML = this.mascotSvg(info.lvl);
+    document.getElementById('mascotCaption').textContent =
+      info.lvl >= 100 ? 'MAX-Level erreicht 🏆' : info.rem+' / '+info.need+' XP bis Level '+(info.lvl+1);
+    this.openSheet('mascotSheet');
   },
 
   /* ---------- Sheets ---------- */
@@ -1542,16 +1563,17 @@ function mascotShell(lvl, glowRgb, inner){
   return '<svg viewBox="0 0 100 100" style="filter:drop-shadow(0 0 '+glow+'px rgba('+glowRgb+','+gOp+'));animation-duration:'+dur+'s">'+inner+'</svg>';
 }
 function orbitStars(lvl, colA, colB){
-  // alle 2 Level ein neuer Stern (max 20), danach wachsen die Sterne weiter
-  const n = Math.min(20, Math.floor(lvl/2));
-  const grow = Math.max(0, lvl-40) * 0.02;
+  // JEDES Level-Up von 2 bis 21 bringt einen neuen Stern (max 20),
+  // danach wachsen die Sterne pro Level weiter
+  const n = Math.min(20, Math.max(0, lvl-1));
+  const grow = Math.max(0, lvl-21) * 0.015;
   let s = '';
   for(let i=0;i<n;i++){
     const ang = i*2.4 + 0.8;
-    const rad = i%2 ? 44 : 36;
+    const rad = i%2 ? 46 : 40;               // außerhalb des Körpers (Radius ~34)
     const x = +(50 + Math.cos(ang)*rad).toFixed(1);
-    const y = +(52 + Math.sin(ang)*(rad-7)).toFixed(1);
-    s += starShape(x, y, +(1.7 + (i%3)*0.8 + grow).toFixed(2), i%2 ? colA : colB);
+    const y = +(52 + Math.sin(ang)*(rad-8)).toFixed(1);
+    s += starShape(x, y, +(2.6 + (i%3)*0.9 + grow).toFixed(2), i%2 ? colA : colB);
   }
   return s;
 }
@@ -1580,7 +1602,7 @@ function slimeSvg(lvl){
   let s = '<defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1">'+
     '<stop offset="0" stop-color="'+c1+'"/><stop offset="1" stop-color="'+c2+'"/></linearGradient></defs>';
   if(lvl >= 10) s += '<ellipse cx="50" cy="55" rx="'+(38+9*t).toFixed(1)+'" ry="'+(35+8*t).toFixed(1)+'" fill="#b48be5" opacity="'+(0.07+0.16*t).toFixed(2)+'"/>';
-  s += orbitStars(lvl, '#ffd76e', '#fff');
+  s += orbitStars(lvl, '#ffd76e', '#e5679b');
   s += '<g transform="translate(50 55) scale('+sc+') translate(-50 -55)">';
   // Feen-Flügel
   if(lvl >= 55){
