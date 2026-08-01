@@ -595,7 +595,7 @@ body.theme-dark,html.theme-dark{
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v26</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v27</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -979,27 +979,19 @@ const App = {
     }
     return { lvl, rem, need };
   },
-  rankFor(lvl){
-    const F = [['🌱','Knospe'],['🌸','Blüte'],['🦋','Schmetterling'],['🌠','Sternschnuppe'],['💎','Diamant'],['👑','Ikone'],['🌟','Legende']];
-    const M = [['🥉','Bronze'],['🥈','Silber'],['🥇','Gold'],['🛡️','Platin'],['💎','Diamant'],['🏆','Champion'],['⚡','Legende']];
-    const R = this.isDark() ? M : F;
-    return R[Math.min(6, Math.floor((lvl-1)/15))];
-  },
   addXp(delta){
     const before = this.levelInfo(this.state.meta.xp).lvl;
     this.state.meta.xp = Math.max(0, (this.state.meta.xp||0) + delta);
     const after = this.levelInfo(this.state.meta.xp).lvl;
     this.save();
     if(delta > 0 && after > before){
-      const [em, name] = this.rankFor(after);
-      setTimeout(()=>{ Sound.allDone(); rain(); toast('Level Up! '+em+' '+name+' · Lv '+after); }, 500);
+      setTimeout(()=>{ Sound.allDone(); rain(); toast('Level Up! Jetzt Level '+after+' 🎉'); }, 500);
     }
   },
   renderLevel(){
     const info = this.levelInfo(this.state.meta.xp);
-    const [em, name] = this.rankFor(info.lvl);
     const chip = document.getElementById('levelChip');
-    chip.textContent = em+' '+name+' · Lv '+info.lvl;
+    chip.textContent = 'Level '+info.lvl;
     chip.className = 'level-chip' + (info.lvl>=90 ? ' t7' : info.lvl>=60 ? ' t5' : info.lvl>=30 ? ' t3' : '');
     if(info.lvl >= 100){
       document.getElementById('xpFill').style.width = '100%';
