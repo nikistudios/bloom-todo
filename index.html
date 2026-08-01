@@ -236,10 +236,10 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 .witem.on{color:var(--accent);font-size:1.12rem;}
 
 /* Icon-Auswahl im Sheet */
-.icon-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:2px;}
+.icon-chips{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:2px;}
 .icon-chip{
-  width:38px;height:38px;border-radius:12px;border:1px solid var(--line);background:var(--field);
-  font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  width:100%;aspect-ratio:1;border-radius:12px;border:1px solid var(--line);background:var(--field);
+  font-size:1.05rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;
 }
 .icon-chip.active{background:rgba(229,139,169,.12);border-color:rgba(229,139,169,.5);}
 
@@ -573,7 +573,7 @@ body.theme-dark,html.theme-dark{
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v21</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v22</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -619,7 +619,7 @@ const THEMES = [
   ['theme-mint','Mint','#e0f5ec'],
   ['theme-dark','Dark 🌑','#0b0c10']
 ];
-const ICONS = ['🌸','⏰','📚','💼','🏋️','🛒','🍽','🌙'];
+const ICONS = ['🌸','⏰','📚','💼','🏋️','⚽','🎮','🖥','🚗','🛒','🍽','💊','✈️','🎯','🔥','🌙'];
 const DEFAULT_ROUTINES = [
   { id:'r_wake',  text:'Aufwachen!',     icon:'⏰', time:'08:00' },
   { id:'r_sleep', text:'Schlafen gehen', icon:'🌙', time:'22:00' }
@@ -893,11 +893,25 @@ const App = {
   },
 
   /* ---------- Aktionen ---------- */
+  prioEmoji(){
+    const cls = (THEMES[this.state.meta.theme] || THEMES[0])[0];
+    return cls === 'theme-dark' ? '⚡' : '💗';
+  },
+  /* Erledigte Aufgaben verschwinden am nächsten Tag (ab 0 Uhr) von selbst */
+  cleanupDone(){
+    const midnight = new Date(); midnight.setHours(0,0,0,0);
+    const before = this.state.todos.length;
+    this.state.todos = this.state.todos.filter(t => !(t.done && (t.doneAt||0) < midnight.getTime()));
+    const changed = this.state.todos.length !== before;
+    if(changed) this.save();
+    return changed;
+  },
   toggle(id){
     if(this._justDragged) return;
     const t = this.state.todos.find(x=>x.id===id);
     if(!t) return;
     t.done = !t.done;
+    if(t.done) t.doneAt = Date.now(); else delete t.doneAt;
     if(t.done){
       Sound.complete();
       const el = document.querySelector('[data-id="'+id+'"]');
@@ -967,7 +981,7 @@ const App = {
   },
   cycleTheme(){
     this.state.meta.theme = (this.state.meta.theme + 1) % THEMES.length;
-    this.save(); this.applyTheme(); Sound.add();
+    this.save(); this.applyTheme(); this.render(); Sound.add();
   },
   applyTheme(){
     // nur eigene Theme-Klassen anfassen, sonst nichts an <body>/<html> ändern
@@ -977,6 +991,9 @@ const App = {
     const [cls, name, barColor] = THEMES[this.state.meta.theme] || THEMES[0];
     if(cls){ document.body.classList.add(cls); document.documentElement.classList.add(cls); }
     document.getElementById('themeHint').textContent = name;
+    // Wichtig-Marker je Theme (💗 hell / ⚡ dunkel)
+    const cw = document.getElementById('chipWichtig');
+    if(cw) cw.textContent = this.prioEmoji()+' Wichtig';
     // iPhone-Statusleiste/Browserleiste in Theme-Farbe färben
     const meta = document.querySelector('meta[name="theme-color"]');
     if(meta) meta.setAttribute('content', barColor);
@@ -1024,7 +1041,7 @@ const App = {
   /* ---------- Task-Zeile (für beide Ansichten) ---------- */
   taskHtml(t, showWhen){
     const chips = [];
-    if(t.prio===1 && !t.done) chips.push('<span class="mchip prio">💗 Wichtig</span>');
+    if(t.prio===1 && !t.done) chips.push('<span class="mchip prio">'+this.prioEmoji()+' Wichtig</span>');
     if(showWhen && (t.date || t.time)){
       const parts = [];
       if(t.date) parts.push(this.niceDate(t.date));
@@ -1168,7 +1185,7 @@ const App = {
           sub = 'Noch '+fmtDur(minutesBetween(nowHM, t.end));
           subCls = ' now';
         }
-        if(t.prio===1 && !t.done) sub += ' · 💗 Wichtig';
+        if(t.prio===1 && !t.done) sub += ' · '+this.prioEmoji()+' Wichtig';
         const editFn = t.routine ? 'App.openRoutine' : 'App.openEdit';
         const checkFn = t.routine ? 'App.toggleRoutine' : 'App.toggle';
         rows += '<div class="tlx-row'+(t.done?' done':'')+'" data-id="'+t.id+'">'+
@@ -1235,11 +1252,16 @@ const App = {
 
   init(){
     this.load();
+    this.cleanupDone();
     this.applyTheme();
     this.renderHeader();
     this.render();
-    // "Jetzt"-Linie und Restzeit-Anzeige minütlich aktualisieren
-    setInterval(()=>{ this.renderHeader(); if(this.state.view==='cal') this.render(); }, 60000);
+    // Minütlich: "Jetzt"-Linie aktualisieren und um 0 Uhr Erledigtes ausblenden
+    setInterval(()=>{
+      const changed = this.cleanupDone();
+      this.renderHeader();
+      if(changed || this.state.view==='cal' || this.isDesktop()) this.render();
+    }, 60000);
     setupDrag(document.getElementById('list'));
     setupDrag(document.getElementById('dayList'));
     setupTimeDrag(document.getElementById('dayList'));
