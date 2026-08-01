@@ -606,7 +606,7 @@ body.theme-dark,html.theme-dark{
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v30</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v31</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1563,18 +1563,54 @@ function mascotShell(lvl, glowRgb, inner){
   const dur = (3.4 - 1.7*t).toFixed(2);
   return '<svg viewBox="0 0 100 100" style="filter:drop-shadow(0 0 '+glow+'px rgba('+glowRgb+','+gOp+'));animation-duration:'+dur+'s">'+inner+'</svg>';
 }
-function orbitStars(lvl, colA, colB){
-  // JEDES Level-Up von 2 bis 21 bringt einen neuen Stern (max 20),
-  // danach wachsen die Sterne pro Level weiter
-  const n = Math.min(20, Math.max(0, lvl-1));
-  const grow = Math.max(0, lvl-21) * 0.015;
+/* Schwebende Sammel-Objekte: jedes Level 2–25 schaltet ein ANDERES Objekt frei,
+   ab Level 26 werden sie nach und nach vergoldet und größer (alle 3 Level eins) */
+function decorations(lvl, dark){
+  const heart = (x,y,r,c) => '<path d="M'+x+' '+(y+r*0.9)+' C'+(x-r*1.5)+' '+(y-r*0.5)+' '+(x-r*0.6)+' '+(y-r*1.4)+' '+x+' '+(y-r*0.35)+
+    ' C'+(x+r*0.6)+' '+(y-r*1.4)+' '+(x+r*1.5)+' '+(y-r*0.5)+' '+x+' '+(y+r*0.9)+' Z" fill="'+c+'"/>';
+  const bubble = (x,y,r,c) => '<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="none" stroke="'+c+'" stroke-width="1.4" opacity=".85"/>'+
+    '<circle cx="'+(x-r*0.35).toFixed(1)+'" cy="'+(y-r*0.35).toFixed(1)+'" r="'+(r*0.28).toFixed(1)+'" fill="'+c+'"/>';
+  const flower = (x,y,r,c) => {
+    let f = '';
+    for(let k=0;k<5;k++){
+      const a = k*1.2566 - 1.57;
+      f += '<circle cx="'+(x+Math.cos(a)*r*0.75).toFixed(1)+'" cy="'+(y+Math.sin(a)*r*0.75).toFixed(1)+'" r="'+(r*0.5).toFixed(1)+'" fill="'+c+'"/>';
+    }
+    return f + '<circle cx="'+x+'" cy="'+y+'" r="'+(r*0.42).toFixed(1)+'" fill="#ffd76e"/>';
+  };
+  const bfly = (x,y,r,c) => '<ellipse cx="'+(x-r*0.62).toFixed(1)+'" cy="'+y+'" rx="'+(r*0.62).toFixed(1)+'" ry="'+r+'" fill="'+c+'" transform="rotate(-22 '+x+' '+y+')"/>'+
+    '<ellipse cx="'+(x+r*0.62).toFixed(1)+'" cy="'+y+'" rx="'+(r*0.62).toFixed(1)+'" ry="'+r+'" fill="'+c+'" transform="rotate(22 '+x+' '+y+')"/>';
+  const bolt = (x,y,r,c) => '<path d="M'+x+' '+(y-r)+' L'+(x-r*0.75)+' '+(y+r*0.2)+' L'+(x-r*0.1)+' '+(y+r*0.2)+' L'+(x-r*0.6)+' '+(y+r)+
+    ' L'+(x+r*0.75)+' '+(y-r*0.1)+' L'+(x+r*0.05)+' '+(y-r*0.1)+' Z" fill="'+c+'"/>';
+  const ember = (x,y,r,c) => '<path d="M'+x+' '+(y-r)+' Q'+(x+r)+' '+y+' '+x+' '+(y+r)+' Q'+(x-r)+' '+y+' '+x+' '+(y-r)+' Z" fill="'+c+'"/>';
+  const rune = (x,y,r,c) => '<rect x="'+(x-r*0.7).toFixed(1)+'" y="'+(y-r*0.7).toFixed(1)+'" width="'+(r*1.4).toFixed(1)+'" height="'+(r*1.4).toFixed(1)+'" fill="'+c+'" transform="rotate(45 '+x+' '+y+')"/>';
+  const orb = (x,y,r,c) => '<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+c+'"/>'+
+    '<circle cx="'+(x-r*0.3).toFixed(1)+'" cy="'+(y-r*0.3).toFixed(1)+'" r="'+(r*0.3).toFixed(1)+'" fill="#fff" opacity=".85"/>';
+
+  const SLIME = [
+    [starShape,'#ffd76e'], [heart,'#f4548c'], [flower,'#ff9ec4'],
+    [bubble,'#7ec3f0'], [starShape,'#b48be5'], [bfly,'#9b7bff'],
+    [heart,'#ff8fae'], [flower,'#b48be5'], [bubble,'#f4a4c8'], [starShape,'#7ec3f0'], [bfly,'#f4548c'], [orb,'#ffd76e']
+  ];
+  const DRAGON = [
+    [starShape,'#ffd76e'], [bolt,'#8fd0ff'], [ember,'#ff9b3d'],
+    [rune,'#8fd0ff'], [orb,'#9b7bff'], [starShape,'#fff'],
+    [bolt,'#ffd76e'], [ember,'#ff6b4d'], [rune,'#9b7bff'], [orb,'#8fd0ff'], [starShape,'#ff9b3d'], [bolt,'#fff']
+  ];
+  const SET = dark ? DRAGON : SLIME;
+
+  const n = Math.min(12, Math.floor(Math.max(0, lvl-1)/2));
+  const goldCount = Math.max(0, Math.floor((lvl-25)/3));
   let s = '';
   for(let i=0;i<n;i++){
     const ang = i*2.4 + 0.8;
     const rad = i%2 ? 46 : 40;               // außerhalb des Körpers (Radius ~34)
     const x = +(50 + Math.cos(ang)*rad).toFixed(1);
     const y = +(52 + Math.sin(ang)*(rad-8)).toFixed(1);
-    s += starShape(x, y, +(2.6 + (i%3)*0.9 + grow).toFixed(2), i%2 ? colA : colB);
+    const [fn, col] = SET[i % SET.length];
+    const upgraded = i < goldCount;
+    const r = +( (2.6 + (i%3)*0.8) * (upgraded ? 1.35 : 1) ).toFixed(2);
+    s += fn(x, y, r, upgraded ? '#ffd76e' : col);
   }
   return s;
 }
@@ -1603,8 +1639,14 @@ function slimeSvg(lvl){
   let s = '<defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1">'+
     '<stop offset="0" stop-color="'+c1+'"/><stop offset="1" stop-color="'+c2+'"/></linearGradient></defs>';
   if(lvl >= 10) s += '<ellipse cx="50" cy="55" rx="'+(38+9*t).toFixed(1)+'" ry="'+(35+8*t).toFixed(1)+'" fill="#b48be5" opacity="'+(0.07+0.16*t).toFixed(2)+'"/>';
-  s += orbitStars(lvl, '#ffd76e', '#e5679b');
+  s += decorations(lvl, false);
   s += '<g transform="translate(50 55) scale('+sc+') translate(-50 -55)">';
+  // Cape (ab 50, ab 78 golden)
+  if(lvl >= 50){
+    const cc = lvl >= 78 ? '#ffd76e' : '#b48be5';
+    s += '<path d="M24 38 Q14 66 24 84 L34 76 Q26 58 31 40 Z" fill="'+cc+'" opacity=".9"/>'+
+         '<path d="M76 38 Q86 66 76 84 L66 76 Q74 58 69 40 Z" fill="'+cc+'" opacity=".9"/>';
+  }
   // Feen-Flügel
   if(lvl >= 55){
     s += '<path d="M18 50 Q4 38 10 24 Q24 32 27 46 Z" fill="#fff" opacity=".75"/>'+
@@ -1623,6 +1665,41 @@ function slimeSvg(lvl){
   if(lvl >= 2){
     s += '<ellipse cx="29" cy="61" rx="4.5" ry="2.8" fill="#ff8fae" opacity=".6"/>'+
          '<ellipse cx="71" cy="61" rx="4.5" ry="2.8" fill="#ff8fae" opacity=".6"/>';
+  }
+  // Accessoires am Körper
+  if(lvl >= 4){
+    s += '<circle cx="27" cy="70" r="2" fill="#ff8fae" opacity=".85"/><circle cx="33" cy="75" r="1.6" fill="#ff8fae" opacity=".85"/><circle cx="23" cy="63" r="1.5" fill="#ff8fae" opacity=".85"/>';
+  }
+  if(lvl >= 7 && lvl < 38){
+    s += '<circle cx="38" cy="52" r="8.5" fill="none" stroke="#6b5a7a" stroke-width="1.8"/>'+
+         '<circle cx="62" cy="52" r="8.5" fill="none" stroke="#6b5a7a" stroke-width="1.8"/>'+
+         '<path d="M46.5 52 L53.5 52" stroke="#6b5a7a" stroke-width="1.8"/>';
+  }
+  if(lvl >= 38){
+    s += '<path d="M38 60 C29 52 32 42 38 46 C44 42 47 52 38 60 Z" fill="none" stroke="#f4548c" stroke-width="1.8"/>'+
+         '<path d="M62 60 C53 52 56 42 62 46 C68 42 71 52 62 60 Z" fill="none" stroke="#f4548c" stroke-width="1.8"/>'+
+         '<path d="M45 51 L55 51" stroke="#f4548c" stroke-width="1.8"/>';
+  }
+  if(lvl >= 28){
+    s += '<path d="M20 68 Q50 79 80 68 L80 73 Q50 84 20 73 Z" fill="'+(lvl>=78?'#ffd76e':'#9b7bff')+'" opacity=".9"/>';
+  }
+  if(lvl >= 13){
+    const pearl = (x,y,g) => '<circle cx="'+x+'" cy="'+y+'" r="'+(g?2.8:2.1)+'" fill="'+(g?'#ffd76e':'#fff')+'" stroke="#d8b6e0" stroke-width=".8"/>';
+    s += pearl(39,81) + pearl(44.5,83.5) + pearl(50,84.5, lvl>=62) + pearl(55.5,83.5) + pearl(61,81);
+  }
+  if(lvl >= 17){
+    for(let k=0;k<5;k++){
+      const a = k*1.2566 - 1.57;
+      s += '<circle cx="'+(24+Math.cos(a)*2.6).toFixed(1)+'" cy="'+(30+Math.sin(a)*2.6).toFixed(1)+'" r="1.8" fill="#ff9ec4"/>';
+    }
+    s += '<circle cx="24" cy="30" r="1.4" fill="#ffd76e"/>';
+  }
+  if(lvl >= 42){
+    s += '<path d="M70 59 Q79 56 81 65" stroke="#c94f84" stroke-width="1.6" fill="none"/>'+
+         '<rect x="74" y="63" width="10" height="8" rx="2.5" fill="#f4548c"/><circle cx="79" cy="67" r="1.2" fill="#ffd76e"/>';
+  }
+  if(lvl >= 62){
+    s += '<path d="M83 36 L89 22" stroke="#c94f84" stroke-width="2" stroke-linecap="round"/>' + starShape(90,20,3.4,'#ffd76e');
   }
   // Kopfschmuck-Stufen: Schleife → Diadem → Goldkrone → Juwelenkrone → Heiligenschein
   if(lvl >= 90) s += '<ellipse cx="50" cy="2.5" rx="15" ry="4" fill="none" stroke="#ffd76e" stroke-width="2.6"/>';
@@ -1647,6 +1724,7 @@ function dragonSvg(lvl){
   let s = '<defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1">'+
     '<stop offset="0" stop-color="'+c1+'"/><stop offset="1" stop-color="'+c2+'"/></linearGradient></defs>';
   if(lvl >= 10) s += '<ellipse cx="50" cy="57" rx="'+(38+9*t).toFixed(1)+'" ry="'+(35+8*t).toFixed(1)+'" fill="#9b7bff" opacity="'+(0.08+0.18*t).toFixed(2)+'"/>';
+  s += decorations(lvl, true);
   // Blitze
   if(lvl >= 70) s += '<path d="M20 6 L12 20 L18 20 L10 34 L26 16 L19 16 Z" fill="#ffd76e"/>';
   if(lvl >= 90) s += '<path d="M84 10 L76 24 L82 24 L74 38 L90 20 L83 20 Z" fill="#ffd76e"/>';
@@ -1668,6 +1746,12 @@ function dragonSvg(lvl){
     : lvl >= 15
     ? '<path d="M38 32 L30 16 L45 27 Z" fill="#e8ecf5"/><path d="M62 32 L70 16 L55 27 Z" fill="#e8ecf5"/>'
     : '<path d="M40 33 L36 23 L45 29 Z" fill="#e8ecf5"/><path d="M60 33 L64 23 L55 29 Z" fill="#e8ecf5"/>';
+  // Umhang (ab 42, ab 78 golden)
+  if(lvl >= 42){
+    const cc = lvl >= 78 ? '#ffd76e' : '#42348f';
+    s += '<path d="M26 42 Q14 66 24 86 L34 78 Q27 60 32 44 Z" fill="'+cc+'"/>'+
+         '<path d="M74 42 Q86 66 76 86 L66 78 Q73 60 68 44 Z" fill="'+cc+'"/>';
+  }
   // Körper + Bauch
   s += '<circle cx="50" cy="58" r="30" fill="url(#mg)"/>';
   s += '<ellipse cx="50" cy="69" rx="16" ry="11" fill="#cfe0ff" opacity=".9"/>';
@@ -1678,6 +1762,32 @@ function dragonSvg(lvl){
   // Mund + Zahn
   s += '<path d="M43 62 Q50 66.5 57 62" stroke="#232742" stroke-width="2.4" fill="none" stroke-linecap="round"/>';
   s += '<path d="M54 63.5 L56 68 L58 63" fill="#fff"/>';
+  // Rüstung & Accessoires
+  if(lvl >= 4){
+    s += '<path d="M41 72 Q50 76 59 72" stroke="#9fb4e8" stroke-width="1.4" fill="none" opacity=".85"/>'+
+         '<path d="M43 78 Q50 81 57 78" stroke="#9fb4e8" stroke-width="1.4" fill="none" opacity=".85"/>';
+  }
+  if(lvl >= 7){
+    s += '<path d="M63 59 L65 64" stroke="#ff6b4d" stroke-width="1.6" stroke-linecap="round"/>'+
+         '<path d="M67 58 L69 63" stroke="#ff6b4d" stroke-width="1.6" stroke-linecap="round"/>';
+  }
+  if(lvl >= 17){
+    s += '<path d="M22 44 L34 40 L34 48 L24 52 Z" fill="#3d4db8" stroke="#8fd0ff" stroke-width=".8"/>'+
+         '<path d="M78 44 L66 40 L66 48 L76 52 Z" fill="#3d4db8" stroke="#8fd0ff" stroke-width=".8"/>';
+  }
+  if(lvl >= 13){
+    s += '<path d="M33 66 Q50 73 67 66 L67 70 Q50 77 33 70 Z" fill="#6b4a3a"/>'+
+         '<path d="M48.5 71 L50 76 L51.5 71 Z" fill="#fff"/>';
+    if(lvl >= 62) s += '<circle cx="40" cy="69" r="1.4" fill="#ffd76e"/><circle cx="60" cy="69" r="1.4" fill="#ffd76e"/>';
+  }
+  if(lvl >= 38){
+    s += '<path d="M34 37 Q50 30 66 37 L66 42 Q50 35 34 42 Z" fill="#c4cede"/>';
+  }
+  if(lvl >= 28){
+    s += '<path d="M81 15 L74 39" stroke="#d7dfeb" stroke-width="2.6" stroke-linecap="round"/>'+
+         '<path d="M70.5 35 L80 32" stroke="#8a5a2e" stroke-width="2.4" stroke-linecap="round"/>'+
+         '<circle cx="82" cy="13" r="1.6" fill="#ffd76e"/>';
+  }
   // Feueratem-Stufen (ab 85 beidseitig)
   if(lvl >= 30){
     const big = lvl >= 65;
