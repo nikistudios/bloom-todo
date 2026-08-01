@@ -606,7 +606,7 @@ body.theme-dark,html.theme-dark{
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v31</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v32</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -894,25 +894,6 @@ const App = {
     const id = this.state.editId;
     this.closeSheets();
     this.remove(id);
-  },
-  toggleRoutine(id){
-    if(this._justDragged) return;
-    const d = this.state.selDate;
-    const map = this.state.meta.routineDone || (this.state.meta.routineDone = {});
-    const arr = map[d] || (map[d] = []);
-    const i = arr.indexOf(id);
-    if(i >= 0){
-      arr.splice(i,1);
-      Sound.uncomplete();
-      this.addXp(-5);
-    } else {
-      arr.push(id);
-      Sound.complete();
-      const el = document.querySelector('[data-id="'+id+'"]');
-      if(el) burst(el);
-      this.addXp(5);
-    }
-    this.save(); this.render();
   },
   resetRoutines(){
     this.state.meta.routines = DEFAULT_ROUTINES.map(r=>Object.assign({},r));
@@ -1227,10 +1208,9 @@ const App = {
       WD_LONG[sel.getDay()]+', '+sel.getDate()+'. '+MONTHS[sel.getMonth()] + (s.selDate===today ? ' · Heute' : '');
 
     const dayTasks = s.todos.filter(t => t.date === s.selDate);
-    const doneRoutines = (s.meta.routineDone||{})[s.selDate] || [];
     const routines = (s.meta.routines||[]).map(r => ({
       id:r.id, text:r.text, icon:r.icon, time:r.time, end:'', note:'', prio:0,
-      done: doneRoutines.indexOf(r.id) >= 0, routine:true
+      done:false, routine:true
     }));
     const timed = dayTasks.filter(t => t.time)
       .concat(routines)
@@ -1266,7 +1246,6 @@ const App = {
         }
         if(t.prio===1 && !t.done) sub += ' · '+this.prioEmoji()+' Wichtig';
         const editFn = t.routine ? 'App.openRoutine' : 'App.openEdit';
-        const checkFn = t.routine ? 'App.toggleRoutine' : 'App.toggle';
         rows += '<div class="tlx-row'+(t.done?' done':'')+'" data-id="'+t.id+'">'+
           '<div class="tlx-time">'+
             '<span class="t1">'+t.time+'</span>'+
@@ -1279,9 +1258,10 @@ const App = {
               '<div class="tlx-title">'+esc(t.text)+'</div>'+
               (t.note ? '<div class="tlx-note">'+esc(t.note)+'</div>' : '')+
             '</div>'+
-            '<button class="tlx-check" onclick="'+checkFn+'(\''+t.id+'\')" aria-label="Abhaken">'+
-              '<svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6"/></svg>'+
-            '</button>'+
+            (t.routine ? '' :
+              '<button class="tlx-check" onclick="App.toggle(\''+t.id+'\')" aria-label="Abhaken">'+
+                '<svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6"/></svg>'+
+              '</button>')+
           '</div>'+
         '</div>';
       }
