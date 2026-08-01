@@ -573,7 +573,7 @@ body.theme-dark,html.theme-dark{
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v22</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v23</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -702,7 +702,7 @@ const App = {
     this.state.editId = null;
     this.state.editRoutineId = null;
     this.showRoutineFields(false);
-    this.fillSheet({ text:'', note:'', prio:0, icon:'🌸',
+    this.fillSheet({ text:'', note:'', prio:0, icon:this.defaultIcon(),
       date: (this.state.view==='cal' || this.isDesktop()) ? (this.state.selDate||'') : '', time:'', end:'' });
     document.getElementById('sheetTitle').textContent = 'Neues To-Do';
     document.getElementById('saveBtn').textContent = 'Hinzufügen';
@@ -717,7 +717,7 @@ const App = {
     this.state.editId = id;
     this.state.editRoutineId = null;
     this.showRoutineFields(false);
-    this.fillSheet({ text:t.text, note:t.note||'', prio:t.prio||0, icon:t.icon||'🌸', date:t.date||'', time:t.time||'', end:t.end||'' });
+    this.fillSheet({ text:t.text, note:t.note||'', prio:t.prio||0, icon:t.icon||this.defaultIcon(), date:t.date||'', time:t.time||'', end:t.end||'' });
     document.getElementById('sheetTitle').textContent = 'To-Do bearbeiten';
     document.getElementById('saveBtn').textContent = 'Speichern';
     document.getElementById('sheetDelBtn').style.display = 'block';
@@ -893,10 +893,11 @@ const App = {
   },
 
   /* ---------- Aktionen ---------- */
-  prioEmoji(){
-    const cls = (THEMES[this.state.meta.theme] || THEMES[0])[0];
-    return cls === 'theme-dark' ? '⚡' : '💗';
+  isDark(){
+    return (THEMES[this.state.meta.theme] || THEMES[0])[0] === 'theme-dark';
   },
+  prioEmoji(){ return this.isDark() ? '⚡' : '💗'; },
+  defaultIcon(){ return this.isDark() ? '🎯' : '🌸'; },
   /* Erledigte Aufgaben verschwinden am nächsten Tag (ab 0 Uhr) von selbst */
   cleanupDone(){
     const midnight = new Date(); midnight.setHours(0,0,0,0);
@@ -1052,7 +1053,7 @@ const App = {
       '<button class="check" onclick="App.toggle(\''+t.id+'\')" aria-label="Abhaken">'+
         '<svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6"/></svg>'+
       '</button>'+
-      '<span class="ticon">'+(t.icon||'🌸')+'</span>'+
+      '<span class="ticon">'+(t.icon||this.defaultIcon())+'</span>'+
       '<div class="body" onclick="App.openEdit(\''+t.id+'\')">'+
         '<div class="label">'+esc(t.text)+'</div>'+
         (t.note ? '<div class="note">'+esc(t.note)+'</div>' : '')+
@@ -1098,7 +1099,7 @@ const App = {
                 : s.filter==='active' ? 'Alles erledigt. Sauber durchgezogen.'
                 : 'Noch nichts geplant.<br>Tipp unten auf +';
       document.getElementById('list').innerHTML =
-        '<div class="empty"><span class="em">'+(s.filter==='active'?'🎉':'🌿')+'</span>'+msg+'</div>';
+        '<div class="empty"><span class="em">'+(s.filter==='active'?'🎉':(this.isDark()?'🗒':'🌿'))+'</span>'+msg+'</div>';
     } else {
       document.getElementById('list').innerHTML = filtered.map(t => this.taskHtml(t, true)).join('');
     }
@@ -1193,7 +1194,7 @@ const App = {
             '<span class="t1">'+t.time+'</span>'+
             (t.end ? '<span class="t2">'+t.end+'</span>' : '')+
           '</div>'+
-          '<div class="tlx-rail"><div class="tlx-bubble'+(t.end?' pill':'')+'">'+(t.icon||'🌸')+'</div></div>'+
+          '<div class="tlx-rail"><div class="tlx-bubble'+(t.end?' pill':'')+'">'+(t.icon||this.defaultIcon())+'</div></div>'+
           '<div class="tlx-body">'+
             '<div class="tlx-info" onclick="'+editFn+'(\''+t.id+'\')">'+
               '<div class="tlx-sub'+subCls+'">'+sub+'</div>'+
