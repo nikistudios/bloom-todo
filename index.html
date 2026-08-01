@@ -106,11 +106,25 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
 .ring .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;}
 .progress-card .big{font-size:1.08rem;font-weight:800;}
 .progress-card .small{font-size:.84rem;color:var(--soft);margin-top:3px;}
-.streak{
+.level-chip{
   display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:.78rem;font-weight:700;
   color:var(--accent-2);background:rgba(180,139,229,.12);
-  padding:4px 11px;border-radius:20px;
+  padding:4px 11px;border-radius:20px;transition:.3s;
 }
+.level-chip.t3{background:transparent;border:1.5px solid var(--accent);color:var(--accent);}
+.level-chip.t5{background:linear-gradient(135deg,var(--accent),var(--accent-2));border:none;color:#fff;}
+.level-chip.t7{
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));border:none;color:#fff;
+  animation:glowPulse 2.2s ease-in-out infinite;
+}
+@keyframes glowPulse{
+  0%,100%{box-shadow:0 0 8px -2px var(--accent);}
+  50%{box-shadow:0 0 20px 2px var(--accent-2);}
+}
+.xp-bar{height:6px;border-radius:4px;background:var(--surface);margin-top:8px;overflow:hidden;}
+.xp-bar i{display:block;height:100%;border-radius:4px;width:0;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .5s cubic-bezier(.4,1,.4,1);}
+.xp-text{display:block;font-size:.68rem;font-weight:700;color:var(--faint);margin-top:4px;}
 
 /* ---------- Tabs ---------- */
 .tabs{display:flex;gap:8px;}
@@ -466,10 +480,12 @@ body.theme-dark,html.theme-dark{
         </svg>
         <span class="pct" id="pct">0%</span>
       </div>
-      <div>
+      <div style="flex:1;min-width:0">
         <div class="big" id="pBig"></div>
         <div class="small" id="pSmall"></div>
-        <span class="streak">🔥 <span id="streakNum">0</span> Tage Streak</span>
+        <span class="level-chip" id="levelChip"></span>
+        <div class="xp-bar"><i id="xpFill"></i></div>
+        <span class="xp-text" id="xpText"></span>
       </div>
     </div>
 
@@ -573,7 +589,7 @@ body.theme-dark,html.theme-dark{
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v23</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v24</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -631,7 +647,7 @@ const MONTHS = ['Jan','Feb','März','Apr','Mai','Juni','Juli','Aug','Sept','Okt'
 const App = {
   state: {
     todos: [],                     // {id, text, note, prio, done, created, date:'YYYY-MM-DD'|'', time:'HH:MM'|'', end:'HH:MM'|''}
-    meta: { streak:0, lastDone:'', sound:true, theme:0, name:'Sophia',
+    meta: { xp:0, sound:true, theme:0, name:'Sophia',
             routines: DEFAULT_ROUTINES.map(r=>Object.assign({},r)), routineDone:{} },
     filter: 'all',
     view: 'list',
@@ -871,12 +887,13 @@ const App = {
     if(i >= 0){
       arr.splice(i,1);
       Sound.uncomplete();
+      this.addXp(-5);
     } else {
       arr.push(id);
       Sound.complete();
       const el = document.querySelector('[data-id="'+id+'"]');
       if(el) burst(el);
-      this.updateStreak();
+      this.addXp(5);
     }
     this.save(); this.render();
   },
@@ -913,16 +930,18 @@ const App = {
     if(!t) return;
     t.done = !t.done;
     if(t.done) t.doneAt = Date.now(); else delete t.doneAt;
+    const xp = 10 + (t.prio===1 ? 5 : 0);
     if(t.done){
       Sound.complete();
       const el = document.querySelector('[data-id="'+id+'"]');
       if(el) burst(el);
-      this.updateStreak();
+      this.addXp(xp);
       if(this.state.todos.length && this.state.todos.every(x=>x.done)){
         setTimeout(()=>{ Sound.allDone(); rain(); toast('Alles erledigt. Stark durchgezogen 🔥'); }, 350);
       }
     } else {
       Sound.uncomplete();
+      this.addXp(-xp);
     }
     this.save(); this.render();
   },
@@ -943,15 +962,36 @@ const App = {
   },
   setFilter(f){ this.state.filter = f; this.render(); },
 
-  /* ---------- Streak ---------- */
-  dayStr(d){ return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); },
-  updateStreak(){
-    const today = this.dayStr(new Date());
-    if(this.state.meta.lastDone === today) return;
-    const y = new Date(); y.setDate(y.getDate()-1);
-    this.state.meta.streak = (this.state.meta.lastDone === this.dayStr(y)) ? (this.state.meta.streak||0)+1 : 1;
-    this.state.meta.lastDone = today;
+  /* ---------- XP & Level ---------- */
+  levelInfo(xp){
+    let lvl = 1, need = 40, rem = Math.max(0, xp||0);
+    while(rem >= need){ rem -= need; lvl++; need = 40 + (lvl-1)*30; }
+    return { lvl, rem, need };
+  },
+  rankFor(lvl){
+    const F = [['🌱','Knospe'],['🌸','Blüte'],['🦋','Schmetterling'],['🌠','Sternschnuppe'],['💎','Diamant'],['👑','Ikone'],['🌟','Legende']];
+    const M = [['🥉','Bronze'],['🥈','Silber'],['🥇','Gold'],['🛡️','Platin'],['💎','Diamant'],['🏆','Champion'],['⚡','Legende']];
+    const R = this.isDark() ? M : F;
+    return R[Math.min(lvl, 7) - 1];
+  },
+  addXp(delta){
+    const before = this.levelInfo(this.state.meta.xp).lvl;
+    this.state.meta.xp = Math.max(0, (this.state.meta.xp||0) + delta);
+    const after = this.levelInfo(this.state.meta.xp).lvl;
     this.save();
+    if(delta > 0 && after > before){
+      const [em, name] = this.rankFor(after);
+      setTimeout(()=>{ Sound.allDone(); rain(); toast('Level Up! '+em+' '+name+' · Lv '+after); }, 500);
+    }
+  },
+  renderLevel(){
+    const info = this.levelInfo(this.state.meta.xp);
+    const [em, name] = this.rankFor(info.lvl);
+    const chip = document.getElementById('levelChip');
+    chip.textContent = em+' '+name+' · Lv '+info.lvl;
+    chip.className = 'level-chip' + (info.lvl>=7 ? ' t7' : info.lvl>=5 ? ' t5' : info.lvl>=3 ? ' t3' : '');
+    document.getElementById('xpFill').style.width = Math.round(info.rem/info.need*100)+'%';
+    document.getElementById('xpText').textContent = info.rem+' / '+info.need+' XP bis Level '+(info.lvl+1);
   },
 
   /* ---------- Sheets ---------- */
@@ -1112,7 +1152,7 @@ const App = {
     if(total === 0){ big.textContent = "Los geht's"; small.textContent = 'Noch nichts geplant'; }
     else if(done === total){ big.textContent = 'Alles erledigt 🎉'; small.textContent = 'Nichts mehr offen. Respekt.'; }
     else { big.textContent = done+' von '+total+' geschafft'; small.textContent = (total-done)+' noch offen'; }
-    document.getElementById('streakNum').textContent = s.meta.streak || 0;
+    this.renderLevel();
     document.getElementById('count').textContent = s.todos.filter(t=>!t.done).length + ' offen';
   },
 
