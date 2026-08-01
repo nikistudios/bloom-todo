@@ -402,6 +402,7 @@ body::after{width:300px;height:300px;background:var(--blob2);bottom:-110px;right
   background:var(--card-solid);color:var(--ink);box-shadow:var(--shadow);border:1px solid var(--line);
   font-size:.87rem;font-weight:700;padding:13px 21px;border-radius:16px;
   opacity:0;transition:.35s cubic-bezier(.2,1.2,.4,1);white-space:nowrap;
+  pointer-events:none;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
@@ -605,7 +606,7 @@ body.theme-dark,html.theme-dark{
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v29</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v30</div>
 </div>
 
 <div class="toast" id="toast"></div>
