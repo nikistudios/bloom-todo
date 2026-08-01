@@ -595,7 +595,7 @@ body.theme-dark,html.theme-dark{
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v25</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v26</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -970,15 +970,20 @@ const App = {
 
   /* ---------- XP & Level ---------- */
   levelInfo(xp){
-    let lvl = 1, need = 40, rem = Math.max(0, xp||0);
-    while(rem >= need){ rem -= need; lvl++; need = 40 + (lvl-1)*30; }
+    // 100 Level; frühe Level schnell (30 XP), später bis 150 XP pro Stufe
+    let lvl = 1, rem = Math.max(0, xp||0);
+    let need = 30;
+    while(lvl < 100 && rem >= need){
+      rem -= need; lvl++;
+      need = 30 + Math.min(lvl-1, 20) * 6;
+    }
     return { lvl, rem, need };
   },
   rankFor(lvl){
     const F = [['🌱','Knospe'],['🌸','Blüte'],['🦋','Schmetterling'],['🌠','Sternschnuppe'],['💎','Diamant'],['👑','Ikone'],['🌟','Legende']];
     const M = [['🥉','Bronze'],['🥈','Silber'],['🥇','Gold'],['🛡️','Platin'],['💎','Diamant'],['🏆','Champion'],['⚡','Legende']];
     const R = this.isDark() ? M : F;
-    return R[Math.min(lvl, 7) - 1];
+    return R[Math.min(6, Math.floor((lvl-1)/15))];
   },
   addXp(delta){
     const before = this.levelInfo(this.state.meta.xp).lvl;
@@ -995,14 +1000,19 @@ const App = {
     const [em, name] = this.rankFor(info.lvl);
     const chip = document.getElementById('levelChip');
     chip.textContent = em+' '+name+' · Lv '+info.lvl;
-    chip.className = 'level-chip' + (info.lvl>=7 ? ' t7' : info.lvl>=5 ? ' t5' : info.lvl>=3 ? ' t3' : '');
-    document.getElementById('xpFill').style.width = Math.round(info.rem/info.need*100)+'%';
-    document.getElementById('xpText').textContent = info.rem+' / '+info.need+' XP bis Level '+(info.lvl+1);
+    chip.className = 'level-chip' + (info.lvl>=90 ? ' t7' : info.lvl>=60 ? ' t5' : info.lvl>=30 ? ' t3' : '');
+    if(info.lvl >= 100){
+      document.getElementById('xpFill').style.width = '100%';
+      document.getElementById('xpText').textContent = 'MAX · Level 100 erreicht';
+    } else {
+      document.getElementById('xpFill').style.width = Math.round(info.rem/info.need*100)+'%';
+      document.getElementById('xpText').textContent = info.rem+' / '+info.need+' XP bis Level '+(info.lvl+1);
+    }
     const mascot = document.getElementById('mascot');
-    mascot.className = 'mascot' + (info.lvl>=7 ? ' t7' : '');
-    mascot.innerHTML = this.mascotSvg(Math.min(info.lvl, 7));
+    mascot.className = 'mascot';
+    mascot.innerHTML = this.mascotSvg(info.lvl);
   },
-  /* Maskottchen: Schleimi (hell) bzw. Drache (dark), wird pro Level ausgebauter */
+  /* Maskottchen: Schleimi (hell) bzw. Drache (dark), verbessert sich mit jedem Level */
   mascotSvg(lvl){
     if(this.isDark()) return dragonSvg(lvl);
     return slimeSvg(lvl);
@@ -1522,80 +1532,126 @@ function toast(msg){
   toastTimer = setTimeout(()=>el.classList.remove('show'), 2500);
 }
 
-/* ---------- Maskottchen-Grafiken ---------- */
+/* ---------- Maskottchen-Grafiken (Level 1–100, jede Stufe sichtbar besser) ---------- */
+function lerpColor(a, b, t){
+  const pa = [1,3,5].map(i=>parseInt(a.substr(i,2),16));
+  const pb = [1,3,5].map(i=>parseInt(b.substr(i,2),16));
+  return '#'+pa.map((v,i)=>Math.round(v+(pb[i]-v)*t).toString(16).padStart(2,'0')).join('');
+}
+function starShape(x, y, r, color){
+  return '<path d="M'+x+' '+(y-r)+' L'+(x+r*.3)+' '+(y-r*.3)+' L'+(x+r)+' '+y+' L'+(x+r*.3)+' '+(y+r*.3)+
+    ' L'+x+' '+(y+r)+' L'+(x-r*.3)+' '+(y+r*.3)+' L'+(x-r)+' '+y+' L'+(x-r*.3)+' '+(y-r*.3)+' Z" fill="'+color+'"/>';
+}
+function mascotShell(lvl, glowRgb, inner){
+  const t = (Math.min(lvl,100)-1)/99;
+  const glow = (t*11).toFixed(1);
+  const gOp = (0.2 + 0.55*t).toFixed(2);
+  const dur = (3.4 - 1.7*t).toFixed(2);
+  return '<svg viewBox="0 0 100 100" style="filter:drop-shadow(0 0 '+glow+'px rgba('+glowRgb+','+gOp+'));animation-duration:'+dur+'s">'+inner+'</svg>';
+}
+function orbitStars(lvl, colA, colB){
+  const n = Math.min(12, Math.floor(lvl/8));
+  let s = '';
+  for(let i=0;i<n;i++){
+    const ang = i*2.4 + 0.8;
+    const x = +(50 + Math.cos(ang)*(41 - (i%2)*7)).toFixed(1);
+    const y = +(52 + Math.sin(ang)*(38 - (i%3)*6)).toFixed(1);
+    s += starShape(x, y, 2.2 + (i%3), i%2 ? colA : colB);
+  }
+  return s;
+}
 function slimeSvg(lvl){
-  let s = '<svg viewBox="0 0 100 100"><defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1">';
-  s += lvl >= 5
-    ? '<stop offset="0" stop-color="#ff9ec4"/><stop offset="1" stop-color="#b48be5"/>'
-    : '<stop offset="0" stop-color="#ffc9da"/><stop offset="1" stop-color="#ef92b4"/>';
-  s += '</linearGradient></defs>';
-  if(lvl >= 7) s += '<ellipse cx="50" cy="56" rx="45" ry="41" fill="#b48be5" opacity=".18"/>';
+  const t = (Math.min(lvl,100)-1)/99;
+  const c1 = lerpColor('#ffd2e0','#ff8ac2',t), c2 = lerpColor('#f0a0be','#8b5cf6',t);
+  const sc = (0.72 + 0.28*t).toFixed(3);
+  let s = '<defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1">'+
+    '<stop offset="0" stop-color="'+c1+'"/><stop offset="1" stop-color="'+c2+'"/></linearGradient></defs>';
+  if(lvl >= 10) s += '<ellipse cx="50" cy="55" rx="'+(38+9*t).toFixed(1)+'" ry="'+(35+8*t).toFixed(1)+'" fill="#b48be5" opacity="'+(0.07+0.16*t).toFixed(2)+'"/>';
+  s += orbitStars(lvl, '#ffd76e', '#fff');
+  s += '<g transform="translate(50 55) scale('+sc+') translate(-50 -55)">';
+  // Feen-Flügel
+  if(lvl >= 55){
+    s += '<path d="M18 50 Q4 38 10 24 Q24 32 27 46 Z" fill="#fff" opacity=".75"/>'+
+         '<path d="M82 50 Q96 38 90 24 Q76 32 73 46 Z" fill="#fff" opacity=".75"/>';
+  }
   // Körper
   s += '<path d="M50 18 C74 18 86 40 84 60 C82 78 68 86 50 86 C32 86 18 78 16 60 C14 40 26 18 50 18 Z" fill="url(#mg)"/>';
   s += '<ellipse cx="38" cy="34" rx="10" ry="6" fill="#fff" opacity=".35" transform="rotate(-20 38 34)"/>';
-  // Gesicht
+  // Augen (ab 35 mit Funkel-Glanz)
   s += '<circle cx="38" cy="52" r="5" fill="#3c3346"/><circle cx="62" cy="52" r="5" fill="#3c3346"/>';
-  s += '<circle cx="39.6" cy="50.4" r="1.8" fill="#fff"/><circle cx="63.6" cy="50.4" r="1.8" fill="#fff"/>';
+  const hl = lvl >= 35 ? 2.6 : 1.8;
+  s += '<circle cx="39.6" cy="50.4" r="'+hl+'" fill="#fff"/><circle cx="63.6" cy="50.4" r="'+hl+'" fill="#fff"/>';
+  if(lvl >= 35) s += '<circle cx="36.5" cy="54" r="1" fill="#fff"/><circle cx="60.5" cy="54" r="1" fill="#fff"/>';
+  // Mund + Bäckchen
   s += '<path d="M44 63 Q50 '+(lvl>=2?'70':'67')+' 56 63" stroke="#3c3346" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
   if(lvl >= 2){
-    s += '<ellipse cx="29" cy="61" rx="4.5" ry="2.8" fill="#ff8fae" opacity=".6"/>';
-    s += '<ellipse cx="71" cy="61" rx="4.5" ry="2.8" fill="#ff8fae" opacity=".6"/>';
+    s += '<ellipse cx="29" cy="61" rx="4.5" ry="2.8" fill="#ff8fae" opacity=".6"/>'+
+         '<ellipse cx="71" cy="61" rx="4.5" ry="2.8" fill="#ff8fae" opacity=".6"/>';
   }
-  if(lvl >= 3){
-    const star = (x,y,r) => '<path d="M'+x+' '+(y-r)+' L'+(x+r*.3)+' '+(y-r*.3)+' L'+(x+r)+' '+y+' L'+(x+r*.3)+' '+(y+r*.3)+' L'+x+' '+(y+r)+' L'+(x-r*.3)+' '+(y+r*.3)+' L'+(x-r)+' '+y+' L'+(x-r*.3)+' '+(y-r*.3)+' Z" fill="#ffd76e"/>';
-    s += star(14,26,5) + star(88,20,4) + star(90,66,3.5);
-  }
-  if(lvl >= 4 && lvl < 6){
+  // Kopfschmuck-Stufen: Schleife → Diadem → Goldkrone → Juwelenkrone → Heiligenschein
+  if(lvl >= 90) s += '<ellipse cx="50" cy="2.5" rx="15" ry="4" fill="none" stroke="#ffd76e" stroke-width="2.6"/>';
+  if(lvl >= 45){
+    s += '<path d="M36 18 L39 5 L50 13 L61 5 L64 18 Z" fill="'+(lvl>=70?'#ffc94d':'#ffd76e')+'"/>';
+    if(lvl >= 70) s += '<circle cx="43" cy="14" r="1.8" fill="#ff5f8f"/><circle cx="50" cy="12.5" r="1.8" fill="#6ec9ff"/><circle cx="57" cy="14" r="1.8" fill="#7de3a0"/>';
+  } else if(lvl >= 25){
+    s += '<path d="M39 18 L42 8 L50 14 L58 8 L61 18 Z" fill="#d8dee9"/><circle cx="50" cy="12" r="1.8" fill="#ff8fae"/>';
+  } else if(lvl >= 10){
     s += '<path d="M50 17 L37 9 L40 22 Z" fill="#e5679b"/><path d="M50 17 L63 9 L60 22 Z" fill="#e5679b"/><circle cx="50" cy="16" r="3.4" fill="#c94f84"/>';
   }
-  if(lvl >= 6){
-    s += '<path d="M36 18 L39 5 L50 13 L61 5 L64 18 Z" fill="#ffd76e"/>';
-    s += '<circle cx="39" cy="5" r="2" fill="#ffb84d"/><circle cx="61" cy="5" r="2" fill="#ffb84d"/><circle cx="50" cy="12" r="2" fill="#ffb84d"/>';
-  }
-  return s + '</svg>';
+  s += '</g>';
+  return mascotShell(lvl, '212,140,235', s);
 }
 function dragonSvg(lvl){
-  let s = '<svg viewBox="0 0 100 100"><defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1">';
-  s += '<stop offset="0" stop-color="#7fb2ff"/><stop offset="1" stop-color="#4a5fd0"/>';
-  s += '</linearGradient></defs>';
-  if(lvl >= 7) s += '<ellipse cx="50" cy="58" rx="45" ry="40" fill="#9b7bff" opacity=".2"/>';
-  // Flügel
-  if(lvl >= 3){
-    const big = lvl >= 6;
-    s += '<path d="M24 54 Q'+(big?'0 38 8 12':'6 42 12 24')+' Q28 32 31 46 Z" fill="#3d4db8"/>';
-    s += '<path d="M76 54 Q'+(big?'100 38 92 12':'94 42 88 24')+' Q72 32 69 46 Z" fill="#3d4db8"/>';
+  const t = (Math.min(lvl,100)-1)/99;
+  const c1 = lerpColor('#8fbcff','#8b5cf6',t), c2 = lerpColor('#5a70d8','#251a5e',t);
+  const sc = (0.72 + 0.28*t).toFixed(3);
+  let s = '<defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1">'+
+    '<stop offset="0" stop-color="'+c1+'"/><stop offset="1" stop-color="'+c2+'"/></linearGradient></defs>';
+  if(lvl >= 10) s += '<ellipse cx="50" cy="57" rx="'+(38+9*t).toFixed(1)+'" ry="'+(35+8*t).toFixed(1)+'" fill="#9b7bff" opacity="'+(0.08+0.18*t).toFixed(2)+'"/>';
+  // Blitze
+  if(lvl >= 70) s += '<path d="M20 6 L12 20 L18 20 L10 34 L26 16 L19 16 Z" fill="#ffd76e"/>';
+  if(lvl >= 90) s += '<path d="M84 10 L76 24 L82 24 L74 38 L90 20 L83 20 Z" fill="#ffd76e"/>';
+  s += '<g transform="translate(50 57) scale('+sc+') translate(-50 -57)">';
+  // Flügel-Stufen
+  if(lvl >= 10){
+    const w = lvl >= 75 ? ['0 34 6 6','100 34 94 6'] : lvl >= 40 ? ['2 38 9 14','98 38 91 14'] : ['6 42 12 24','94 42 88 24'];
+    s += '<path d="M24 54 Q'+w[0]+' Q28 30 31 46 Z" fill="#3d4db8"/>';
+    s += '<path d="M76 54 Q'+w[1]+' Q72 30 69 46 Z" fill="#3d4db8"/>';
   }
   // Rückenstacheln
-  if(lvl >= 4){
+  if(lvl >= 20){
     s += '<path d="M36 32 L40 21 L44 31 Z" fill="#ffd76e"/><path d="M46 29 L50 17 L54 29 Z" fill="#ffd76e"/><path d="M56 31 L60 21 L64 32 Z" fill="#ffd76e"/>';
+    if(lvl >= 60) s += '<path d="M28 37 L31 27 L36 35 Z" fill="#ffd76e"/><path d="M64 35 L69 27 L72 37 Z" fill="#ffd76e"/>';
   }
-  // Hörner
-  s += lvl >= 2
+  // Hörner-Stufen (ab 90 golden)
+  s += lvl >= 40
+    ? '<path d="M37 31 L26 12 L45 26 Z" fill="'+(lvl>=90?'#ffd76e':'#e8ecf5')+'"/><path d="M63 31 L74 12 L55 26 Z" fill="'+(lvl>=90?'#ffd76e':'#e8ecf5')+'"/>'
+    : lvl >= 15
     ? '<path d="M38 32 L30 16 L45 27 Z" fill="#e8ecf5"/><path d="M62 32 L70 16 L55 27 Z" fill="#e8ecf5"/>'
     : '<path d="M40 33 L36 23 L45 29 Z" fill="#e8ecf5"/><path d="M60 33 L64 23 L55 29 Z" fill="#e8ecf5"/>';
   // Körper + Bauch
   s += '<circle cx="50" cy="58" r="30" fill="url(#mg)"/>';
   s += '<ellipse cx="50" cy="69" rx="16" ry="11" fill="#cfe0ff" opacity=".9"/>';
-  // Augen
+  // Augen (ab 50 glühend)
   s += '<circle cx="40" cy="52" r="6" fill="#fff"/><circle cx="60" cy="52" r="6" fill="#fff"/>';
-  if(lvl >= 6){
-    s += '<circle cx="40" cy="52" r="4.6" fill="#9b7bff" opacity=".45"/><circle cx="60" cy="52" r="4.6" fill="#9b7bff" opacity=".45"/>';
-  }
+  if(lvl >= 50) s += '<circle cx="40" cy="52" r="4.6" fill="#9b7bff" opacity=".5"/><circle cx="60" cy="52" r="4.6" fill="#9b7bff" opacity=".5"/>';
   s += '<circle cx="41" cy="52.5" r="2.7" fill="#232742"/><circle cx="59" cy="52.5" r="2.7" fill="#232742"/>';
   // Mund + Zahn
   s += '<path d="M43 62 Q50 66.5 57 62" stroke="#232742" stroke-width="2.4" fill="none" stroke-linecap="round"/>';
   s += '<path d="M54 63.5 L56 68 L58 63" fill="#fff"/>';
-  // Feueratem
-  if(lvl >= 5){
-    s += '<path d="M76 66 Q86 74 78 86 Q68 76 76 66 Z" fill="#ff9b3d"/>';
+  // Feueratem-Stufen (ab 85 beidseitig)
+  if(lvl >= 30){
+    const big = lvl >= 65;
+    s += '<path d="M76 '+(big?'62':'66')+' Q'+(big?'90 74 80 90':'86 74 78 86')+' Q68 76 76 '+(big?'62':'66')+' Z" fill="#ff9b3d"/>';
     s += '<path d="M76 70 Q82 75 77 82 Q71 76 76 70 Z" fill="#ffd76e"/>';
+    if(lvl >= 85) s += '<path d="M24 66 Q14 74 22 86 Q32 76 24 66 Z" fill="#ff9b3d"/><path d="M24 70 Q18 75 23 82 Q29 76 24 70 Z" fill="#ffd76e"/>';
   }
-  // Blitz
-  if(lvl >= 7){
-    s += '<path d="M20 6 L12 20 L18 20 L10 34 L26 16 L19 16 Z" fill="#ffd76e"/>';
-  }
-  return s + '</svg>';
+  // Kopfpanzer
+  if(lvl >= 95) s += '<path d="M42 26 Q50 18 58 26 L56 32 Q50 27 44 32 Z" fill="#ffd76e"/>';
+  s += '</g>';
+  return mascotShell(lvl, '155,123,255', s);
 }
+
 
 /* Konfetti-Burst an einem Element */
 function burst(el){
