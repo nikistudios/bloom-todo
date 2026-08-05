@@ -606,7 +606,7 @@ body.theme-dark,html.theme-dark{
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v32</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v33</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1579,7 +1579,9 @@ function decorations(lvl, dark){
   ];
   const SET = dark ? DRAGON : SLIME;
 
-  const n = Math.min(12, Math.floor(Math.max(0, lvl-1)/2));
+  // Freischalt-Plan füllt die Lücken zwischen den Kleidungs-Leveln (4,7,10,13,15,17,20...)
+  const UNLOCKS = [2,3,5,6,8,9,11,12,14,16,18,21];
+  const n = UNLOCKS.filter(u => lvl >= u).length;
   const goldCount = Math.max(0, Math.floor((lvl-25)/3));
   let s = '';
   for(let i=0;i<n;i++){
@@ -1742,6 +1744,11 @@ function dragonSvg(lvl){
   // Mund + Zahn
   s += '<path d="M43 62 Q50 66.5 57 62" stroke="#232742" stroke-width="2.4" fill="none" stroke-linecap="round"/>';
   s += '<path d="M54 63.5 L56 68 L58 63" fill="#fff"/>';
+  // Level 2: zweiter Fangzahn + Nasenlöcher
+  if(lvl >= 2){
+    s += '<path d="M42 63 L44 67.5 L46 62.5" fill="#fff"/>'+
+         '<circle cx="46.5" cy="57.5" r="1" fill="#232742" opacity=".65"/><circle cx="53.5" cy="57.5" r="1" fill="#232742" opacity=".65"/>';
+  }
   // Rüstung & Accessoires
   if(lvl >= 4){
     s += '<path d="M41 72 Q50 76 59 72" stroke="#9fb4e8" stroke-width="1.4" fill="none" opacity=".85"/>'+
