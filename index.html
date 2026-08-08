@@ -606,7 +606,7 @@ body.theme-dark,html.theme-dark{
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v33</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v34</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1149,6 +1149,7 @@ const App = {
     ).join('');
 
     const filtered = s.todos
+      .filter(t => !t.time)   // Aufgaben mit Uhrzeit leben nur im Tagesplaner
       .filter(t => s.filter==='all' ? true : s.filter==='active' ? !t.done : t.done)
       .slice()
       .sort((a,b) => (a.done - b.done) || ((a.ord||0) - (b.ord||0)));
