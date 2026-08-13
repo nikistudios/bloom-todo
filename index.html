@@ -606,7 +606,7 @@ body.theme-dark,html.theme-dark{
     <span class="ico">📥</span> Backup importieren
   </button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="App.importData(event)" />
-  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v34</div>
+  <div style="text-align:center;font-size:.72rem;color:var(--faint);padding-top:12px;font-weight:600">Bloom v35</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -731,12 +731,30 @@ const App = {
     ['fNote','fDate','fEnd','fPrio'].forEach(id =>
       document.getElementById(id).style.display = isRoutine ? 'none' : '');
   },
+  /* Zeit-Vorschlag: aktuelle Zeit beim ersten Eintrag, sonst nächste freie Zeit */
+  suggestTime(dateStr){
+    const now = new Date();
+    const nowMin = now.getHours()*60 + now.getMinutes();
+    const isToday = dateStr === this.fmtDate(now);
+    const timed = this.state.todos.filter(t => t.date === dateStr && t.time);
+    let m;
+    if(timed.length){
+      m = Math.max.apply(null, timed.map(t => t.end ? toMin(t.end) : toMin(t.time) + 60));
+    } else {
+      m = isToday ? nowMin : 12*60;
+    }
+    if(isToday) m = Math.max(m, nowMin);
+    m = Math.ceil(m/5)*5;
+    return toHM(Math.min(m, 23*60+55));
+  },
   openAdd(){
     this.state.editId = null;
     this.state.editRoutineId = null;
     this.showRoutineFields(false);
+    const planning = this.state.view==='cal' || this.isDesktop();
+    const date = planning ? (this.state.selDate || this.fmtDate(new Date())) : '';
     this.fillSheet({ text:'', note:'', prio:0, icon:this.defaultIcon(),
-      date: (this.state.view==='cal' || this.isDesktop()) ? (this.state.selDate||'') : '', time:'', end:'' });
+      date, time: planning ? this.suggestTime(date) : '', end:'' });
     document.getElementById('sheetTitle').textContent = 'Neues To-Do';
     document.getElementById('saveBtn').textContent = 'Hinzufügen';
     document.getElementById('sheetDelBtn').style.display = 'none';
