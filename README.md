@@ -1,10 +1,10 @@
-# 🌸 Bloom · To-Do
+# 🌸 Bloom
 
-Ästhetische To-Do App als einzelne `index.html` – Vanilla JS, keine Frameworks.
+To-Dos und Tagesplaner als einzelne `index.html` – Vanilla JS, keine Frameworks.
 
 - Daten bleiben lokal im Browser (`localStorage`, Key `bloom_v1`) – nichts verlässt das Gerät
-- Sounds über Web Audio API, Konfetti, Streak, 4 Farbwelten
-- Backup: Export/Import als JSON über das Menü (⋯)
+- Aufgaben ohne Uhrzeit in der Liste, Termine mit Uhrzeit im Planer (Zeitstrahl)
+- XP & Level, Sounds, 5 Farbwelten inkl. Dark, Backup über das Teilen-Menü
 - Deploy: GitHub Pages, automatisch bei jedem Push auf `main`
 
 **App:** https://nikistudios.github.io/bloom-todo/
