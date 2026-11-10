@@ -240,7 +240,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 
 /* ================= Plus-Knopf ================= */
 .fab{
-  position:fixed;z-index:10;right:20px;bottom:calc(env(safe-area-inset-bottom, 0px) + 20px);
+  /* auf Tablets an der Inhaltsspalte ausrichten statt am Bildschirmrand */
+  position:fixed;z-index:10;right:max(20px, calc(50% - 220px));bottom:calc(env(safe-area-inset-bottom, 0px) + 20px);
   width:58px;height:58px;border-radius:50%;border:0;color:#fff;
   background:linear-gradient(135deg,var(--accent),var(--accent-2));
   box-shadow:0 12px 26px -8px rgba(140,80,160,.6);
@@ -250,7 +251,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .fab:active{transform:scale(.92);}
 
 /* ================= Sheets ================= */
-.overlay{position:fixed;inset:0;z-index:20;background:var(--overlay);opacity:0;pointer-events:none;transition:opacity .25s;}
+.overlay{position:fixed;inset:0;z-index:20;background:var(--overlay);opacity:0;pointer-events:none;transition:opacity .25s;touch-action:none;}
 .overlay.open{opacity:1;pointer-events:auto;}
 .sheet{
   position:fixed;z-index:21;left:50%;bottom:0;width:100%;max-width:520px;
@@ -265,7 +266,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .grab{width:36px;height:5px;border-radius:3px;background:var(--faint);opacity:.6;margin:8px auto 0;flex:none;}
 .sheet-bar{
   display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;
-  padding:6px 8px 10px;border-bottom:1px solid var(--sep);flex:none;
+  padding:6px 8px 10px;border-bottom:1px solid var(--sep);flex:none;touch-action:none;
 }
 .sheet-bar h3{font-size:16px;font-weight:700;text-align:center;}
 .bar-btn{border:0;background:none;font-size:16px;color:var(--accent-ink);padding:8px;justify-self:start;}
@@ -309,7 +310,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 }
 .wheel::-webkit-scrollbar{display:none;}
 .wheel .pad{height:40px;}
-.witem{height:40px;display:flex;align-items:center;justify-content:center;scroll-snap-align:center;
+.witem{height:40px;display:flex;align-items:center;justify-content:center;scroll-snap-align:center;cursor:pointer;
   font-size:17px;font-weight:600;color:var(--faint);font-variant-numeric:tabular-nums;}
 .witem.on{color:var(--accent-ink);font-weight:800;}
 .btn-danger{
@@ -327,7 +328,6 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .mrow + .mrow::before{content:"";position:absolute;top:0;left:14px;right:0;height:1px;background:var(--sep);}
 .mrow .m-ico{width:22px;text-align:center;flex:none;}
 .mrow .m-txt{flex:1;}
-.mrow .m-hint{font-size:14px;color:var(--soft);}
 .mrow input{flex:1;min-width:0;border:0;background:transparent;font-family:inherit;font-size:16px;color:var(--ink);text-align:right;outline:none;}
 .mrow input::placeholder{color:var(--faint);}
 .swatches{display:flex;gap:12px;padding:14px;flex-wrap:wrap;}
@@ -343,15 +343,17 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 
 /* ================= Toast & Konfetti ================= */
 .toast{
-  position:fixed;z-index:60;left:50%;bottom:calc(env(safe-area-inset-bottom, 0px) + 92px);
-  transform:translate(-50%,14px);opacity:0;pointer-events:none;
-  display:flex;align-items:center;gap:12px;max-width:calc(100vw - 32px);
-  background:var(--ink);color:var(--card);font-size:15px;font-weight:600;
+  /* mittig, höchstens so breit wie der Bildschirm – lange Meldungen brechen um statt herauszuragen */
+  position:fixed;z-index:60;left:16px;right:16px;margin:0 auto;width:-webkit-fit-content;width:fit-content;
+  bottom:calc(env(safe-area-inset-bottom, 0px) + 92px);
+  transform:translateY(14px);opacity:0;pointer-events:none;
+  display:flex;align-items:center;gap:12px;
+  background:var(--ink);color:var(--card);font-size:15px;font-weight:600;line-height:1.3;
   padding:12px 16px;border-radius:14px;box-shadow:0 12px 30px -10px rgba(0,0,0,.45);
-  transition:opacity .25s, transform .3s cubic-bezier(.2,1.2,.4,1);white-space:nowrap;
+  transition:opacity .25s, transform .3s cubic-bezier(.2,1.2,.4,1);
 }
-.toast.show{opacity:1;transform:translate(-50%,0);}
-.toast .act{border:0;background:none;color:var(--accent);font-size:15px;font-weight:700;padding:0;display:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast .act{border:0;background:none;color:var(--accent);font-size:15px;font-weight:700;padding:0;display:none;flex:none;white-space:nowrap;}
 .toast.show .act.on{display:inline;pointer-events:auto;}
 html.theme-dark .toast .act{color:#2f6fe0;}
 .confetti{position:fixed;z-index:50;pointer-events:none;width:9px;height:9px;border-radius:2px;}
@@ -395,8 +397,8 @@ html.theme-dark .toast .act{color:#2f6fe0;}
   </header>
 
   <div class="segmented" role="tablist">
-    <button class="seg active" id="segList" role="tab" onclick="App.setView('list')">Aufgaben</button>
-    <button class="seg" id="segCal" role="tab" onclick="App.setView('cal')">Planer</button>
+    <button class="seg active" id="segList" role="tab" aria-selected="true" onclick="App.setView('list')">Aufgaben</button>
+    <button class="seg" id="segCal" role="tab" aria-selected="false" onclick="App.setView('cal')">Planer</button>
   </div>
 
   <!-- Aufgaben -->
@@ -544,7 +546,7 @@ html.theme-dark .toast .act{color:#2f6fe0;}
       <button class="mrow" onclick="document.getElementById('importFile').click()"><span class="m-ico">📥</span><span class="m-txt">Backup laden</span></button>
     </div>
     <input type="file" id="importFile" accept=".json,application/json" hidden onchange="App.importData(event)" />
-    <p class="version">Bloom v38 · Deine Daten bleiben auf diesem Gerät</p>
+    <p class="version" id="version"></p>
   </div>
 </div>
 
@@ -580,7 +582,8 @@ const Sound = (() => {
       const d = noise.getChannelData(0);
       for(let i=0;i<d.length;i++) d[i] = Math.random()*2 - 1;
     }
-    if(ctx.state === 'suspended') ctx.resume();
+    // iPhone: nach Anruf, Sperrbildschirm oder App-Wechsel ist der Ton „interrupted" – ebenfalls wieder starten
+    if(ctx.state !== 'running'){ const p = ctx.resume(); if(p && p.catch) p.catch(()=>{}); }
     return ctx;
   }
   function impulse(sec, decay){
@@ -664,6 +667,7 @@ const Sound = (() => {
 })();
 
 /* ================= Konstanten ================= */
+const VERSION = 39;
 const KEY = 'bloom_v1';
 const THEMES = [
   { cls:'',               name:'Rosé',     bar:'#fbeaf0', sw:'linear-gradient(135deg,#e0779e,#a886de)' },
@@ -713,7 +717,8 @@ function cleanTodo(t, i){
     prio: t.prio === 1 ? 1 : 0,
     done: !!t.done,
     created: Number(t.created) || Date.now(),
-    date: RE_DATE.test(t.date||'') ? t.date : '',
+    // einmal durch den Kalender schicken: ein unmögliches Datum (z. B. 31.02.) wäre sonst an keinem Tag sichtbar
+    date: RE_DATE.test(t.date||'') ? App.fmtDate(App.parseDate(t.date)) : '',
     time,
     end: time && RE_TIME.test(t.end||'') && t.end > time ? t.end : '',
     ord: typeof t.ord === 'number' ? t.ord : i
@@ -756,6 +761,10 @@ const App = {
   },
   _undo: null,
   _today: '',
+  _dragging: false,
+  _renderPending: false,
+  _wheelUsed: false,
+  _updAt: 0,
 
   /* ---------- Speichern & Laden ---------- */
   load(){
@@ -764,6 +773,7 @@ const App = {
     this.applyData(raw);
   },
   applyData(raw){
+    if(!raw || typeof raw !== 'object') raw = {};
     const todos = Array.isArray(raw.todos) ? raw.todos.map(cleanTodo).filter(Boolean) : [];
     const ids = new Set();
     todos.forEach(t => { while(ids.has(t.id)) t.id = newId(); ids.add(t.id); });
@@ -773,7 +783,11 @@ const App = {
     if(typeof m.sound === 'boolean') meta.sound = m.sound;
     if(Number.isInteger(m.theme) && m.theme >= 0 && m.theme < THEMES.length) meta.theme = m.theme;
     if(typeof m.name === 'string') meta.name = m.name.slice(0,20);
-    if(Array.isArray(m.routines)) meta.routines = m.routines.map(cleanRoutine).filter(Boolean);
+    if(Array.isArray(m.routines)){
+      meta.routines = m.routines.map(cleanRoutine).filter(Boolean);
+      // jede Kennung nur einmal – auch nicht doppelt mit einer Aufgabe
+      meta.routines.forEach(r => { while(ids.has(r.id)) r.id = newId(); ids.add(r.id); });
+    }
   },
   save(){
     try{
@@ -792,8 +806,11 @@ const App = {
   isDesktop(){ return window.matchMedia('(min-width:960px)').matches; },
   setView(v){
     this.state.view = v;
-    document.getElementById('segList').classList.toggle('active', v==='list');
-    document.getElementById('segCal').classList.toggle('active', v==='cal');
+    [['segList','list'],['segCal','cal']].forEach(([id, name]) => {
+      const b = document.getElementById(id);
+      b.classList.toggle('active', v === name);
+      b.setAttribute('aria-selected', String(v === name));
+    });
     document.getElementById('listView').style.display = v==='list' ? 'flex' : 'none';
     document.getElementById('calView').style.display = v==='cal' ? 'flex' : 'none';
     document.getElementById('calView').style.flexDirection = 'column';
@@ -877,11 +894,16 @@ const App = {
     if(v.time){ const p = v.time.split(':'); s.selHour = +p[0]; s.selMin = +p[1]; }
     else { s.selHour = null; s.selMin = 0; }
     s.newDur = (v.time && v.end) ? Math.max(0, minutesBetween(v.time, v.end)) : 0;
+    document.getElementById('fDur').hidden = isRoutine;
     this.setPrio(v.prio || 0);
     this.setIcon(v.icon || '');
+    // noch laufende Ablesungen vom letzten Öffnen verwerfen
+    ['wheelH','wheelM','wheelD'].forEach(id => clearTimeout(document.getElementById(id)._t));
+    this._wheelUsed = false;
     this.buildWheels();
-    setTimeout(()=>this.syncWheels(), 40);
-    setTimeout(()=>this.syncWheels(), 380);
+    this.syncWheels();
+    // nach dem Einblenden nachjustieren – aber nur, solange noch niemand am Rad gedreht hat
+    [40, 380].forEach(ms => setTimeout(() => { if(!this._wheelUsed) this.syncWheels(); }, ms));
   },
   wheelVals(kind){
     const s = this.state;
@@ -901,9 +923,25 @@ const App = {
     fill('wheelM','m', v=>String(v).padStart(2,'0'));
     fill('wheelD','d', durLabel);
   },
+  /* Wert, auf dem ein Rad gerade steht – direkt aus der Scrollposition gelesen */
+  readWheel(id){
+    const el = document.getElementById(id), items = el.querySelectorAll('.witem');
+    if(!items.length || el.offsetParent === null) return null;
+    const idx = Math.max(0, Math.min(items.length-1, Math.round(el.scrollTop/ITEM_H)));
+    items.forEach((it,j) => it.classList.toggle('on', j === idx));
+    return +items[idx].dataset.v;
+  },
+  /* Vor dem Sichern übernehmen, was die Räder zeigen – auch wenn sie noch ausrollen */
+  commitWheels(){
+    const s = this.state;
+    if(s.selHour === null) return;
+    const h = this.readWheel('wheelH'), m = this.readWheel('wheelM'), d = this.readWheel('wheelD');
+    if(h !== null) s.selHour = h;
+    if(m !== null) s.selMin = m;
+    if(d !== null) s.newDur = d;
+  },
   syncWheels(){
     const s = this.state;
-    document.getElementById('fDur').hidden = !!s.editRoutineId;
     document.getElementById('wheels').classList.toggle('disabled', s.selHour === null);
     document.getElementById('noTimeBtn').classList.toggle('active', s.selHour === null);
     const setPos = (id, kind, val) => {
@@ -950,6 +988,7 @@ const App = {
       ti.classList.remove('shake'); void ti.offsetWidth; ti.classList.add('shake');
       ti.focus(); return;
     }
+    this.commitWheels();
     const time = s.selHour === null ? '' : String(s.selHour).padStart(2,'0')+':'+String(s.selMin).padStart(2,'0');
     const icon = s.newIcon || '';
 
@@ -969,15 +1008,20 @@ const App = {
     if(s.editId){
       const t = s.todos.find(x=>x.id===s.editId);
       if(t){
-        const movedToPlan = !t.time && time;
+        const toPlan = !t.time && time, toList = t.time && !time;
         Object.assign(t, { text, note, prio:s.newPrio, icon, date, time, end:fixedEnd });
-        toast(movedToPlan ? 'In den Planer verschoben · '+this.niceDate(date)+', '+time : 'Gespeichert');
+        toast(toPlan ? 'In den Planer verschoben · '+this.niceDate(date)+', '+time
+            : toList ? 'In die Aufgabenliste verschoben' : 'Gespeichert');
       }
     } else {
       const minOrd = s.todos.length ? Math.min.apply(null, s.todos.map(t=>t.ord||0)) : 1;
       s.todos.push({ id:newId(), text, note, prio:s.newPrio, icon, done:false, created:Date.now(), date, time, end:fixedEnd, ord:minOrd-1 });
       Sound.add();
-      if(time && !this.isDesktop() && s.view !== 'cal') toast('Im Planer eingetragen · '+this.niceDate(date)+', '+time);
+      // am Handy sagen, wo der Eintrag gelandet ist, wenn er nicht in der offenen Ansicht erscheint
+      if(!this.isDesktop()){
+        if(time && s.view !== 'cal') toast('Im Planer eingetragen · '+this.niceDate(date)+', '+time);
+        else if(!time && s.view === 'cal') toast('In der Aufgabenliste gespeichert');
+      }
     }
     if(time) s.selDate = date;
     this.save(); this.closeSheets(); this.render();
@@ -999,14 +1043,14 @@ const App = {
     this.remove(id);
   },
   resetRoutines(){
+    this._undo = { routines: this.state.meta.routines };
     this.state.meta.routines = DEFAULT_ROUTINES.map(r=>({...r}));
     this.save(); this.render();
-    toast('Routinen zurückgesetzt');
+    toast('Routinen zurückgesetzt', true);
   },
+  /* Neue Reihenfolge der offenen Aufgaben: einfach durchnummerieren (neue Aufgaben landen weiter ganz oben) */
   applyOrder(ids){
-    const items = ids.map(id=>this.state.todos.find(t=>t.id===id)).filter(Boolean);
-    const ords = items.map(t=>t.ord||0).sort((a,b)=>a-b);
-    items.forEach((t,i)=>{ t.ord = ords[i]; });
+    ids.map(id=>this.state.todos.find(t=>t.id===id)).filter(Boolean).forEach((t,i)=>{ t.ord = i; });
     this.save(); this.render();
   },
 
@@ -1029,10 +1073,13 @@ const App = {
     const t = this.state.todos.find(x=>x.id===id);
     if(!t) return;
     t.done = !t.done;
+    // Haken sofort zeigen; einsortiert wird kurz danach
+    const row = document.querySelector('[data-id="'+id+'"]');
+    if(row) row.classList.toggle('done', t.done);
     if(t.done){
       t.doneAt = Date.now();
       Sound.complete();
-      const el = document.querySelector('[data-id="'+id+'"] .check');
+      const el = row && row.querySelector('.check');
       if(el) burst(el);
       const set = this.todaySet();
       if(set.length > 1 && set.every(x=>x.done)){
@@ -1043,13 +1090,14 @@ const App = {
       Sound.uncomplete();
     }
     this.save();
-    setTimeout(()=>this.render(), t.done ? 260 : 0);
+    setTimeout(()=>this.render(), t.done ? 320 : 0);
   },
   remove(id){
     const t = this.state.todos.find(x=>x.id===id);
     if(!t) return;
-    Sound.del();
     const el = document.querySelector('[data-id="'+id+'"]');
+    if(el && el.classList.contains('removing')) return;   // Doppeltipp: wird schon gelöscht
+    Sound.del();
     if(el) el.classList.add('removing');
     setTimeout(()=>{
       this.state.todos = this.state.todos.filter(x=>x.id!==id);
@@ -1070,9 +1118,16 @@ const App = {
   undo(){
     const u = this._undo;
     if(!u) return;
-    if(u.todos) this.state.todos = this.state.todos.concat(u.todos);
-    if(u.routine) this.state.meta.routines.push(u.routine);
     this._undo = null;
+    const s = this.state;
+    if(u.snapshot){                        // Backup laden rückgängig: alter Stand komplett zurück
+      this.applyData(u.snapshot);
+      this.applyTheme(); this.renderHeader(); this.renderMenu();
+    }
+    // nichts doppelt zurückholen, falls es inzwischen wieder da ist
+    if(u.todos) s.todos = s.todos.concat(u.todos.filter(t => !s.todos.some(x => x.id === t.id)));
+    if(u.routine && !s.meta.routines.some(r => r.id === u.routine.id)) s.meta.routines.push(u.routine);
+    if(u.routines) s.meta.routines = u.routines;
     this.save(); this.render();
     toast('Wiederhergestellt');
   },
@@ -1149,9 +1204,13 @@ const App = {
       try{
         const data = JSON.parse(reader.result);
         if(!data || !Array.isArray(data.todos)) throw new Error('kein Bloom-Backup');
+        // der bisherige Stand wird ersetzt – deshalb merken, damit „Rückgängig" ihn zurückholen kann
+        const snapshot = JSON.parse(JSON.stringify({ todos:this.state.todos, meta:this.state.meta }));
         this.applyData(data);
+        this._undo = { snapshot };
         this.save(); this.applyTheme(); this.renderHeader(); this.renderMenu(); this.render();
-        toast('Backup geladen · '+this.state.todos.length+' Einträge');
+        const n = this.state.todos.length;
+        toast('Backup geladen · '+(n === 1 ? '1 Eintrag' : n+' Einträge'), true);
       }catch(e){ toast('Das ist kein gültiges Bloom-Backup'); }
       ev.target.value = '';
     };
@@ -1178,6 +1237,9 @@ const App = {
   },
 
   render(){
+    // während des Ziehens nichts neu aufbauen (sonst reißt das Ziehen ab) – wird danach nachgeholt
+    if(this._dragging){ this._renderPending = true; return; }
+    this._renderPending = false;
     if(!this.state.selDate) this.state.selDate = this.todayStr();
     const desk = this.isDesktop();
     if(desk || this.state.view === 'list') this.renderList();
@@ -1245,13 +1307,16 @@ const App = {
     const isToday = s.selDate === today;
     const nowHM = this.nowHM();
     const nowRow = '<div class="tlx-now"><span class="t">'+nowHM+'</span><span class="ln"></span></div>';
-    let nowDone = !isToday, rows = '';
+    let nowDone = !isToday, rows = '', busyUntil = '';
     timed.forEach((t, i) => {
       if(!nowDone && nowHM < t.time){ rows += nowRow; nowDone = true; }
       if(i > 0){
-        const g = minutesBetween(timed[i-1].end || timed[i-1].time, t.time);
+        // frei ist erst, wenn auch der längste bisherige Termin vorbei ist (Termine können sich überlappen)
+        const g = minutesBetween(busyUntil, t.time);
         if(g >= 45) rows += '<div class="tlx-gap"><div class="sp"></div><div class="rail"></div><div class="msg">Frei · <b>'+fmtDur(g)+'</b></div></div>';
       }
+      const until = t.end || t.time;
+      if(until > busyUntil) busyUntil = until;
       let sub = t.time + (t.end ? ' – '+t.end : '') + (t.routine ? ' · täglich' : '');
       let subCls = '';
       if(isToday && !t.done && t.end && t.time <= nowHM && nowHM < t.end){ sub = 'Läuft · noch '+fmtDur(minutesBetween(nowHM, t.end)); subCls = ' now'; }
@@ -1290,13 +1355,37 @@ const App = {
   /* Tageswechsel, Aufräumen um 0 Uhr, Jetzt-Linie — auch nach dem Zurückkehren aus dem Hintergrund */
   tick(){
     const today = this.todayStr();
-    if(today !== this._today){
+    const newDay = today !== this._today;
+    if(newDay){
       if(this.state.selDate === this._today) this.state.selDate = today;
       this._today = today;
     }
-    this.cleanupDone();
+    const cleaned = this.cleanupDone();
     this.renderHeader();
-    this.render();
+    if(newDay || cleaned) this.render();
+    // sonst ändert sich von Minute zu Minute nur die Jetzt-Linie im Planer
+    else if(!this._dragging && (this.isDesktop() || this.state.view === 'cal')) this.renderCal();
+  },
+  flushRender(){ if(this._renderPending) this.render(); },
+
+  /* Neue Version online? Dann einmal neu laden – so muss niemand die App von Hand schließen. */
+  async checkUpdate(){
+    if(!/^https?:$/.test(location.protocol)) return;
+    const now = Date.now();
+    if(now - this._updAt < 20*60*1000) return;
+    this._updAt = now;
+    try{
+      const res = await fetch(location.pathname + '?t=' + now, { cache:'no-store' });
+      if(!res.ok) return;
+      const m = /const VERSION = (\d+);/.exec(await res.text());
+      const remote = m ? +m[1] : 0;
+      if(remote <= VERSION) return;
+      // nicht mitten in einer Eingabe neu laden – beim nächsten Mal wieder versuchen
+      if(document.querySelector('.sheet.open') || this._dragging){ this._updAt = 0; return; }
+      if((+sessionStorage.getItem('bloom_upd') || 0) >= remote) return;   // schon versucht: keine Schleife
+      sessionStorage.setItem('bloom_upd', String(remote));
+      location.replace(location.pathname + '?v=' + remote);
+    }catch(e){}
   },
 
   init(){
@@ -1308,25 +1397,30 @@ const App = {
     this.applyTheme();
     this.renderHeader();
     this.setView('list');
+    document.getElementById('version').textContent = 'Bloom v'+VERSION+' · Deine Daten bleiben auf diesem Gerät';
 
     setupDrag(document.getElementById('list'));
     setupTimeDrag(document.getElementById('dayList'));
 
     [['wheelH','h'],['wheelM','m'],['wheelD','d']].forEach(([id,kind]) => {
       const el = document.getElementById(id);
-      let timer = null;
       el.addEventListener('scroll', () => {
         if(el._sync) return;
-        clearTimeout(timer);
-        timer = setTimeout(() => {
-          const items = el.querySelectorAll('.witem');
-          if(!items.length) return;
-          const idx = Math.max(0, Math.min(items.length-1, Math.round(el.scrollTop/ITEM_H)));
-          const v = +items[idx].dataset.v;
+        this._wheelUsed = true;
+        clearTimeout(el._t);
+        el._t = setTimeout(() => {
+          const v = this.readWheel(id);
+          if(v === null || this.state.selHour === null) return;
           if(kind === 'h') this.state.selHour = v; else if(kind === 'm') this.state.selMin = v; else this.state.newDur = v;
-          items.forEach((it,j)=>it.classList.toggle('on', j===idx));
         }, 90);
       }, { passive:true });
+      // Wert direkt antippen bzw. anklicken (praktisch mit der Maus am Laptop)
+      el.addEventListener('click', e => {
+        const it = e.target.closest ? e.target.closest('.witem') : null;
+        if(!it) return;
+        const idx = Array.prototype.indexOf.call(el.querySelectorAll('.witem'), it);
+        el.scrollTo({ top: idx*ITEM_H, behavior:'smooth' });
+      });
     });
 
     const ti = document.getElementById('taskInput'), ni = document.getElementById('noteInput');
@@ -1338,25 +1432,46 @@ const App = {
     document.addEventListener('keydown', e => { if(e.key === 'Escape') this.closeSheets(); });
 
     setInterval(() => this.tick(), 60000);
-    document.addEventListener('visibilitychange', () => { if(!document.hidden) this.tick(); });
-    window.addEventListener('pageshow', () => this.tick());
+    document.addEventListener('visibilitychange', () => { if(!document.hidden){ this.tick(); this.checkUpdate(); } });
+    window.addEventListener('pageshow', e => { if(e.persisted) this.tick(); });
     window.matchMedia('(min-width:960px)').addEventListener('change', () => this.setView(this.state.view));
+
+    // Bloom in zwei Tabs offen: Änderungen aus dem anderen Tab übernehmen statt sie später zu überschreiben
+    window.addEventListener('storage', e => {
+      if(e.key !== KEY || e.newValue === null) return;
+      this.load(); this._undo = null;
+      this.applyTheme(); this.renderHeader(); this.renderMenu(); this.render();
+    });
+
+    // Hinweis nach einem automatischen Update, danach regelmäßig nach neuen Versionen schauen
+    try{
+      if(+sessionStorage.getItem('bloom_upd') === VERSION && sessionStorage.getItem('bloom_upd_seen') !== String(VERSION)){
+        sessionStorage.setItem('bloom_upd_seen', String(VERSION));
+        setTimeout(() => toast('Bloom wurde aktualisiert · v'+VERSION), 700);
+      }
+    }catch(e){}
+    setTimeout(() => this.checkUpdate(), 2500);
   }
 };
 
 /* ================= Aufgaben per Griff umsortieren ================= */
 function setupDrag(container){
-  let row = null, moved = false;
+  const EDGE = 110, SPEED = 14;
+  let row = null, moved = false, lastY = 0, raf = null;
   const rows = () => Array.prototype.slice.call(container.querySelectorAll('.task[data-id]'));
-  function start(target){
+  function start(target, y){
     const h = target.closest && target.closest('.drag');
     if(!h) return false;
-    row = h.closest('.task'); moved = false;
-    if(row) row.classList.add('dragging');
-    return !!row;
+    row = h.closest('.task'); moved = false; lastY = y;
+    if(!row) return false;
+    row.classList.add('dragging');
+    App._dragging = true;
+    raf = requestAnimationFrame(autoScroll);
+    return true;
   }
   function move(y){
     if(!row) return;
+    lastY = y;
     for(const r of rows()){
       if(r === row) continue;
       const rect = r.getBoundingClientRect();
@@ -1364,20 +1479,33 @@ function setupDrag(container){
       if(y >= rect.top + rect.height/2 && y < rect.bottom){ if(r.nextElementSibling !== row){ container.insertBefore(row, r.nextSibling); moved = true; } break; }
     }
   }
+  /* Lange Liste: am oberen/unteren Bildschirmrand mitscrollen, damit man über den sichtbaren Bereich hinaus ziehen kann */
+  function autoScroll(){
+    if(!row){ raf = null; return; }
+    const vh = window.innerHeight;
+    let d = 0;
+    if(lastY < EDGE) d = -Math.ceil((EDGE - lastY) / EDGE * SPEED);
+    else if(lastY > vh - EDGE) d = Math.ceil((lastY - (vh - EDGE)) / EDGE * SPEED);
+    if(d){ window.scrollBy(0, d); move(lastY); }
+    raf = requestAnimationFrame(autoScroll);
+  }
   function end(){
     if(!row) return;
+    if(raf){ cancelAnimationFrame(raf); raf = null; }
     row.classList.remove('dragging');
     const ids = rows().map(r => r.dataset.id);
     row = null;
-    if(moved) App.applyOrder(ids);
+    App._dragging = false;
+    if(moved) App.applyOrder(ids); else App.flushRender();
   }
-  container.addEventListener('touchstart', e => { if(start(e.target)) e.preventDefault(); }, { passive:false });
+  container.addEventListener('touchstart', e => { if(start(e.target, e.touches[0].clientY)) e.preventDefault(); }, { passive:false });
   container.addEventListener('touchmove', e => { if(row){ e.preventDefault(); move(e.touches[0].clientY); } }, { passive:false });
   container.addEventListener('touchend', end);
   container.addEventListener('touchcancel', end);
-  container.addEventListener('mousedown', e => { if(start(e.target)) e.preventDefault(); });
+  container.addEventListener('mousedown', e => { if(start(e.target, e.clientY)) e.preventDefault(); });
   document.addEventListener('mousemove', e => { if(row) move(e.clientY); });
   document.addEventListener('mouseup', end);
+  window.addEventListener('blur', end);   // Maus außerhalb des Fensters losgelassen
 }
 
 /* ================= Planer: Termin halten & ziehen → neue Uhrzeit ================= */
@@ -1393,9 +1521,10 @@ function setupTimeDrag(container){
     if(!r || target.closest('.check')) return;
     row = r; startY = y; lastY = y; active = false;
     timer = setTimeout(() => {
-      item = findItem(row.dataset.id);
+      timer = null;
+      item = row && row.isConnected ? findItem(row.dataset.id) : null;   // Zeile könnte inzwischen neu aufgebaut sein
       if(!item || !item.time){ row = null; return; }
-      active = true;
+      active = true; App._dragging = true;
       origMin = toMin(item.time); dur = item.end ? minutesBetween(item.time, item.end) : 0;
       newMin = origMin; edge = 0;
       const rect = row.getBoundingClientRect(); origTop = rect.top; rowH = rect.height;
@@ -1428,6 +1557,7 @@ function setupTimeDrag(container){
     if(raf){ cancelAnimationFrame(raf); raf = null; }
     if(row && active){
       row.classList.remove('dragging'); row.style.transform = '';
+      App._dragging = false;
       App._justDragged = true;
       setTimeout(() => { App._justDragged = false; }, 400);
       if(newMin !== origMin){
@@ -1435,7 +1565,7 @@ function setupTimeDrag(container){
         if(dur) item.end = toHM(newMin + dur);
         App.save(); App.render();
         toast('Verschoben auf '+item.time);
-      }
+      } else App.flushRender();
     }
     row = null; item = null; active = false;
   }
@@ -1456,13 +1586,22 @@ function setupTimeDrag(container){
     lastY = e.clientY;
   });
   document.addEventListener('mouseup', finish);
+  window.addEventListener('blur', finish);
 }
 
 /* ================= Konfetti ================= */
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)');
+/* Farben passend zur Farbwelt (im dunklen Design kein Rosa) */
+function confettiColors(){
+  const cs = getComputedStyle(document.documentElement);
+  const base = [cs.getPropertyValue('--accent').trim(), cs.getPropertyValue('--accent-2').trim()];
+  return base.concat(App.isDark() ? ['#7fd8ff','#c7d2fe','#ffd166','#5eead4'] : ['#f6bcd0','#8bc9e5','#ffd6a5','#c4b5f7','#a0e5c9']);
+}
 function burst(el){
+  if(REDUCED_MOTION.matches) return;
   const r = el.getBoundingClientRect();
   const x = r.left + r.width/2, y = r.top + r.height/2;
-  const colors = ['#e0779e','#a886de','#f6bcd0','#8bc9e5','#ffd6a5','#c4b5f7'];
+  const colors = confettiColors();
   for(let i=0;i<12;i++){
     const c = document.createElement('div');
     c.className = 'confetti';
@@ -1478,7 +1617,8 @@ function burst(el){
   }
 }
 function rain(){
-  const colors = ['#e0779e','#a886de','#f6bcd0','#8bc9e5','#ffd6a5','#c4b5f7','#a0e5c9'];
+  if(REDUCED_MOTION.matches) return;
+  const colors = confettiColors();
   for(let i=0;i<50;i++){
     const c = document.createElement('div');
     c.className = 'confetti';
